@@ -1,0 +1,84 @@
+/* ---------------------------------------------------------------------------
+   dark-theme.css
+   Sobrescribe el chrome por defecto de CesiumJS para integrarlo con la paleta
+   oscura de la aplicacion. Cesium inyecta sus propios widgets con estilos
+   bastante opinionados, asi que aqui los neutralizamos.
+   --------------------------------------------------------------------------- */
+
+.cesium-viewer,
+.cesium-widget,
+.cesium-widget canvas {
+  width: 100%;
+  height: 100%;
+  background: #05070b;
+}
+
+.cesium-widget canvas {
+  display: block;
+  outline: none;
+}
+
+/* Creditos: se mantienen visibles (requisito de licencia de Cesium) pero
+   discretos, y la interfaz deja libre la esquina inferior izquierda para ellos. */
+.cesium-viewer-bottom {
+  left: 10px;
+  bottom: 6px;
+  font-size: 10px;
+  opacity: 0.4;
+  transition: opacity 0.2s ease;
+}
+
+.cesium-viewer-bottom:hover {
+  opacity: 1;
+}
+
+.cesium-credit-logoContainer img {
+  max-height: 22px;
+}
+
+.cesium-credit-lightbox {
+  background: #161c28;
+  color: #e2e8f0;
+  border: 1px solid #263043;
+}
+
+.cesium-credit-lightbox-title {
+  color: #a8b4c8;
+}
+
+/* Cesium dibuja un contenedor de performance-watchdog / errores; lo alineamos */
+.cesium-widget-errorPanel {
+  background: rgba(10, 13, 18, 0.9);
+}
+
+.cesium-widget-errorPanel-content {
+  background: #161c28;
+  border: 1px solid #263043;
+  color: #e2e8f0;
+  border-radius: 10px;
+}
+
+.cesium-button {
+  background: #1b2231;
+  border: 1px solid #263043;
+  color: #e2e8f0;
+}
+
+/* Tooltip nativo de Cesium desactivado: usamos el nuestro */
+.cesium-performanceDisplay-defaultContainer {
+  top: auto;
+  bottom: 12px;
+  left: 12px;
+  right: auto;
+  background: rgba(22, 28, 40, 0.85);
+  border: 1px solid #263043;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.cesium-performanceDisplay-ms,
+.cesium-performanceDisplay-fps {
+  color: #4ade80;
+  font-size: 10px;
+}

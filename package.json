@@ -1,0 +1,30 @@
+{
+  "name": "satellite-orbit-tracker",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Rastreador 3D en tiempo real de satelites en orbita (Vue 3 + CesiumJS + satellite.js)",
+  "scripts": {
+    "predev": "node scripts/copy-cesium-assets.mjs",
+    "dev": "vite",
+    "prebuild": "node scripts/copy-cesium-assets.mjs",
+    "build": "vite build",
+    "preview": "vite preview",
+    "cesium:assets": "node scripts/copy-cesium-assets.mjs --force",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "@lucide/vue": "^1.30.0",
+    "cesium": "^1.144.0",
+    "pinia": "^4.0.2",
+    "satellite.js": "^7.1.0",
+    "vue": "^3.5.41"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vue/devtools-api": "^8.2.1",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.2.1"
+  }
+}

@@ -1,0 +1,200 @@
+@import 'tailwindcss';
+@import './dark-theme.css';
+
+/* ---------------------------------------------------------------------------
+   Sistema de diseño — Satellite Orbit Tracker
+   Paleta oscura de centro de control de operaciones espaciales.
+   --------------------------------------------------------------------------- */
+@theme {
+  /* Fondos */
+  --color-space-950: #0a0d12;
+  --color-space-900: #0d1117;
+  --color-space-850: #121721;
+  --color-space-800: #161c28;
+  --color-space-750: #1b2231;
+  --color-space-700: #202839;
+
+  /* Bordes */
+  --color-grid-800: #1f2735;
+  --color-grid-700: #263043;
+  --color-grid-600: #33405a;
+
+  /* Texto */
+  --color-ink-100: #e2e8f0;
+  --color-ink-300: #a8b4c8;
+  --color-ink-500: #6b7a92;
+  --color-ink-600: #4c5a72;
+
+  /* Acentos */
+  --color-accent-400: #60a5fa;
+  --color-accent-500: #3b82f6;
+  --color-accent-600: #2563eb;
+  --color-signal-500: #22c55e;
+  --color-signal-400: #4ade80;
+  --color-warn-500: #f59e0b;
+  --color-alert-500: #ef4444;
+  --color-plasma-500: #a855f7;
+  --color-cyan-glow: #38bdf8;
+
+  /* Tipografia */
+  --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Mono', Consolas, monospace;
+
+  /* Radios */
+  --radius-panel: 0.625rem;
+}
+
+@layer base {
+  html,
+  body,
+  #app {
+    height: 100%;
+  }
+
+  /* En moviles la barra de direcciones hace que 100vh sea mayor que el area
+     visible y el pie de la interfaz queda cortado. `dvh` mide el viewport real
+     y se ajusta cuando la barra aparece o desaparece. */
+  @supports (height: 100dvh) {
+    html,
+    body,
+    #app {
+      height: 100dvh;
+    }
+  }
+
+  body {
+    background-color: var(--color-space-950);
+    color: var(--color-ink-100);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow: hidden;
+    /* Evita el destello gris al tocar controles en Android. */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent-500) 40%, transparent);
+  }
+
+  /* Scrollbars discretas y coherentes con el tema */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-grid-600) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-grid-700);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-grid-600);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent-500);
+    outline-offset: 2px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Variantes de layout del dashboard.
+
+   El criterio no puede ser solo el ancho: un movil en horizontal tiene 844 px
+   de ancho pero apenas 390 de alto, y ahi apilar el visor sobre el inspector
+   deja ambos inservibles. `wide` = hay sitio para dos columnas; `stacked` es su
+   complemento exacto.
+   --------------------------------------------------------------------------- */
+@custom-variant wide {
+  @media (min-width: 1024px) {
+    @slot;
+  }
+  @media (min-width: 640px) and (max-height: 520px) {
+    @slot;
+  }
+}
+
+@custom-variant stacked {
+  @media (max-width: 639px) {
+    @slot;
+  }
+  @media (max-width: 1023px) and (min-height: 521px) {
+    @slot;
+  }
+}
+
+/* Tiras de navegacion que se desplazan lateralmente en movil sin mostrar barra. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer components {
+  /* Superficie base de panel: la usan sidebar, tarjetas y modales */
+  .panel {
+    background-color: var(--color-space-800);
+    border: 1px solid var(--color-grid-700);
+    border-radius: var(--radius-panel);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Los controles de la derecha (ordenacion, reloj, acciones) se envuelven en
+       pantallas estrechas en lugar de desbordar la cabecera. */
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    border-bottom: 1px solid var(--color-grid-800);
+  }
+
+  @media (min-width: 640px) {
+    .panel-header {
+      padding: 0.75rem 1rem;
+    }
+  }
+
+  .panel-title {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--color-ink-300);
+  }
+
+  /* Etiqueta pequeña monoespaciada para telemetria */
+  .telemetry-label {
+    font-size: 0.625rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-ink-500);
+  }
+
+  .telemetry-value {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-ink-100);
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    box-shadow: 0 0 6px currentColor;
+  }
+}

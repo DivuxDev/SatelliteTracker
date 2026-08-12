@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="Rastreador 3D en tiempo real de satelites en orbita terrestre. Propagacion SGP4/SDP4 sobre CesiumJS."
+    />
+    <title>Satellite Orbit Tracker</title>
+    <!--
+      CesiumJS carga Workers, Assets y Widgets como ficheros estaticos en tiempo
+      de ejecucion. Se declara aqui, y no en main.js, porque los imports ESM se
+      elevan: si se asignara dentro del modulo podria llegar despues de que
+      Cesium ya hubiese resuelto su ruta base.
+      La ruta la sirve vite-plugin-static-copy (ver vite.config.js).
+    -->
+    <script>
+      window.CESIUM_BASE_URL = '/cesiumStatic/'
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
