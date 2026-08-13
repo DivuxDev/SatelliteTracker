@@ -1,0 +1,14 @@
+.git
+.gitignore
+node_modules
+dist
+dist-ssr
+.env
+.env.local
+.env.*.local
+*.local
+.DS_Store
+.vite
+# Generado por scripts/copy-cesium-assets.mjs durante el build (gancho prebuild).
+public/cesiumStatic
+README.md
