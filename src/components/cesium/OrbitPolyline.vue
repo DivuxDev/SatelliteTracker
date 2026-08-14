@@ -27,12 +27,11 @@ import {
 } from 'cesium'
 
 import { useSatelliteStore } from '@/stores/satelliteStore'
-import { computeGroundTrack, computeOrbitTrack, EARTH_RADIUS_KM } from '@/services/orbitCalculationService'
+import { computeOrbitTrack, EARTH_RADIUS_KM } from '@/services/orbitCalculationService'
 import { useCesiumViewer } from './useCesiumViewer'
 
 const props = defineProps({
   showOrbit: { type: Boolean, default: true },
-  showGroundTrack: { type: Boolean, default: false },
   showFootprint: { type: Boolean, default: true },
 })
 
@@ -41,8 +40,6 @@ const viewer = useCesiumViewer()
 
 /** Anillo orbital, en marco TEME (rotado por modelMatrix). */
 const orbitLines = shallowRef(null)
-/** Traza sobre el terreno, ya en ECEF. */
-const groundLines = shallowRef(null)
 /** Huella de cobertura (una sola entidad). */
 const footprintEntity = shallowRef(null)
 
@@ -54,7 +51,6 @@ const scratchMatrix4 = new Matrix4()
 const scratchPosition = new Cartesian3()
 
 const ORBIT_COLOR = Color.fromCssColorString('#3b82f6')
-const GROUND_TRACK_COLOR = Color.fromCssColorString('#38bdf8')
 
 /* -------------------------------------------------------------------------- */
 /* Ciclo de vida de las primitivas                                            */
@@ -65,7 +61,6 @@ function ensurePrimitives() {
   if (!instance || orbitLines.value) return
 
   orbitLines.value = instance.scene.primitives.add(new PolylineCollection())
-  groundLines.value = instance.scene.primitives.add(new PolylineCollection())
 
   // La orbita vive en TEME: rotamos toda la coleccion en cada frame.
   removePreUpdate = instance.scene.preUpdate.addEventListener(() => {
@@ -119,54 +114,6 @@ function drawOrbit() {
       taperPower: 1,
     }),
   })
-}
-
-/* -------------------------------------------------------------------------- */
-/* Traza sobre el terreno                                                     */
-/* -------------------------------------------------------------------------- */
-
-function drawGroundTrack() {
-  ensurePrimitives()
-  const collection = groundLines.value
-  if (!collection) return
-
-  collection.removeAll()
-  const sat = store.selectedSatellite
-  if (!sat || !props.showGroundTrack) return
-
-  const points = computeGroundTrack(
-    sat.satrec,
-    new Date(store.currentSimulatedTime()),
-    sat.periodMinutes,
-    200,
-  )
-  if (points.length < 2) return
-
-  // Partimos la traza en el antimeridiano: si no, la polilinea cruzaria el
-  // globo entero de lado a lado en cada vuelta.
-  let segment = []
-  const flush = () => {
-    if (segment.length >= 2) {
-      collection.add({
-        positions: segment,
-        width: 1.5,
-        material: Material.fromType('PolylineGlow', {
-          color: GROUND_TRACK_COLOR.withAlpha(0.55),
-          glowPower: 0.35,
-          taperPower: 1,
-        }),
-      })
-    }
-    segment = []
-  }
-
-  let previousLon = points[0].lon
-  for (const point of points) {
-    if (Math.abs(point.lon - previousLon) > 180) flush()
-    segment.push(Cartesian3.fromDegrees(point.lon, point.lat, 20_000))
-    previousLon = point.lon
-  }
-  flush()
 }
 
 /* -------------------------------------------------------------------------- */
@@ -230,7 +177,6 @@ function syncFootprintVisibility() {
 
 function redrawAll() {
   drawOrbit()
-  drawGroundTrack()
   syncFootprintVisibility()
 }
 
@@ -238,7 +184,6 @@ watch(
   [
     () => store.selectedId,
     () => props.showOrbit,
-    () => props.showGroundTrack,
     () => props.showFootprint,
     () => store.timeMultiplier,
   ],
@@ -251,7 +196,6 @@ watch(
 trackRefreshTimer = setInterval(() => {
   if (store.selectedId && !store.isPaused) {
     drawOrbit()
-    drawGroundTrack()
   }
 }, 10_000)
 
@@ -261,11 +205,9 @@ onBeforeUnmount(() => {
   const instance = viewer.value
   if (instance && !instance.isDestroyed()) {
     if (orbitLines.value) instance.scene.primitives.remove(orbitLines.value)
-    if (groundLines.value) instance.scene.primitives.remove(groundLines.value)
     if (footprintEntity.value) instance.entities.remove(footprintEntity.value)
   }
   orbitLines.value = null
-  groundLines.value = null
   footprintEntity.value = null
 })
 </script>

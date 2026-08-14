@@ -14,6 +14,7 @@ import { Copy, X } from '@lucide/vue'
 
 import { useSatelliteStore } from '@/stores/satelliteStore'
 import { EARTH_RADIUS_KM, ORBIT_REGIMES, tleAgeDays } from '@/services/orbitCalculationService'
+import { getSatelliteProfile } from '@/services/satelliteProfileService'
 
 defineProps({
   open: { type: Boolean, default: false },
@@ -23,6 +24,7 @@ const emit = defineEmits(['close'])
 const store = useSatelliteStore()
 const satellite = computed(() => store.selectedSatellite)
 const telemetry = computed(() => store.selectedTelemetry)
+const profile = computed(() => getSatelliteProfile(satellite.value))
 
 const epochLabel = computed(() => {
   const sat = satellite.value
@@ -106,6 +108,70 @@ async function copyTle() {
       </div>
 
       <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4">
+        <!--
+          Que es este objeto. Va lo primero a proposito: antes de los numeros,
+          la pregunta que casi todo el mundo trae es "¿y esto que es?".
+        -->
+        <section v-if="profile" class="rounded-md border border-grid-700 bg-space-850 p-3">
+          <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span
+              class="status-dot shrink-0"
+              :style="{ backgroundColor: profile.type.color, color: profile.type.color }"
+            />
+            <span class="text-[13px] font-semibold text-ink-100">{{ profile.type.label }}</span>
+            <!--
+              Distinguir lo verificado de lo deducido no es un adorno: el tipo
+              sale del nombre del objeto mediante patrones, y eso falla.
+            -->
+            <span
+              v-if="!profile.verified"
+              class="rounded bg-space-750 px-1.5 py-px text-[10px] text-ink-500"
+              title="Deducido del nombre del objeto mediante patrones. Los TLE no incluyen el tipo de mision."
+            >
+              deducido
+            </span>
+            <span
+              v-else
+              class="rounded bg-signal-500/15 px-1.5 py-px text-[10px] text-signal-500"
+              title="Ficha escrita a mano y verificada para este objeto"
+            >
+              ficha propia
+            </span>
+          </div>
+
+          <p v-if="profile.summary" class="mt-2 text-[12px] leading-relaxed text-ink-300">
+            {{ profile.summary }}
+          </p>
+          <p v-else class="mt-2 text-[12px] leading-relaxed text-ink-300">
+            {{ profile.blurb }}
+          </p>
+
+          <ul v-if="profile.facts.length > 0" class="mt-2 space-y-0.5">
+            <li
+              v-for="fact in profile.facts"
+              :key="fact"
+              class="flex gap-1.5 text-[11px] leading-relaxed text-ink-500"
+            >
+              <span class="text-accent-400">·</span>
+              {{ fact }}
+            </li>
+          </ul>
+
+          <!-- Lo que dice la orbita. Esto no es heuristica: sale de los numeros. -->
+          <div v-if="profile.notes.length > 0" class="mt-3 border-t border-grid-800 pt-2">
+            <p class="telemetry-label mb-1">Lo que dice su orbita</p>
+            <ul class="space-y-1">
+              <li
+                v-for="note in profile.notes"
+                :key="note"
+                class="text-[11px] leading-relaxed text-ink-500"
+              >
+                {{ note }}
+              </li>
+            </ul>
+          </div>
+        </section>
+
         <!-- Identificacion -->
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div>

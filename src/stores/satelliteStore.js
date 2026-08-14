@@ -19,6 +19,7 @@ import { defineStore } from 'pinia'
 
 import { CATEGORIES, clearTleCache, fetchCategory } from '@/services/celestrakService'
 import { ORBIT_REGIMES, buildSatellite, tleAgeDays } from '@/services/orbitCalculationService'
+import { noradIdsMatchingAlias } from '@/services/satelliteProfileService'
 import {
   DWELL_SECONDS,
   SUGGESTED_IDS,
@@ -148,11 +149,23 @@ export const useSatelliteStore = defineStore('satellites', () => {
     const regimes = regimeFilter.value
     const countries = countryFilter.value
 
+    // Celestrak nombra los objetos como le conviene: el Hubble es "HST" y la
+    // ISS es "ISS (ZARYA)". Buscar "hubble" no encontraba nada. Los alias de las
+    // fichas curadas traducen el nombre por el que se busca al ID NORAD real.
+    const aliasIds = query ? noradIdsMatchingAlias(query) : null
+
     const matches = satellites.value.filter((sat) => {
       if (categories.size > 0 && sat.categoryId && !categories.has(sat.categoryId)) return false
       if (regimes.length > 0 && !regimes.includes(sat.regime)) return false
       if (countries.length > 0 && !countries.includes(sat.country)) return false
-      if (query && !sat.name.toLowerCase().includes(query) && !sat.id.includes(query)) return false
+      if (
+        query &&
+        !sat.name.toLowerCase().includes(query) &&
+        !sat.id.includes(query) &&
+        !aliasIds.has(String(sat.id))
+      ) {
+        return false
+      }
       return true
     })
 

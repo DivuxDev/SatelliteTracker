@@ -188,9 +188,10 @@ watch(
             <span class="font-mono text-[11px] tabular-nums text-ink-300">
               {{ row.speedKmS.toFixed(1) }}
             </span>
+            <!-- Icono decorativo: en movil compite por ancho con el nombre. -->
             <Satellite
               :size="12"
-              class="shrink-0 text-ink-600 transition-colors group-hover:text-accent-400"
+              class="hidden shrink-0 text-ink-600 transition-colors group-hover:text-accent-400 sm:block"
             />
           </span>
         </button>

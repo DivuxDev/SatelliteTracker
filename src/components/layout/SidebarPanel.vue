@@ -7,7 +7,7 @@
  * que se propagan hacia arriba para que App.vue controle los modales.
  */
 import { computed, ref } from 'vue'
-import { EllipsisVertical, ListFilter, Search, TriangleAlert, X } from '@lucide/vue'
+import { ListFilter, Search, TriangleAlert, X } from '@lucide/vue'
 
 import { SORT_MODES, useSatelliteStore } from '@/stores/satelliteStore'
 import { ORBIT_REGIMES } from '@/services/orbitCalculationService'
@@ -58,7 +58,13 @@ const activeFilterCount = computed(
   <aside
     class="flex min-h-0 w-full flex-1 flex-col gap-2 overflow-hidden p-2 wide:w-[clamp(300px,24vw,360px)] wide:flex-none wide:shrink-0 wide:gap-3 wide:p-3"
   >
-    <MostTrackedPanel />
+    <!--
+      "Mas seguidos" desaparece en movil. Ahi el alto es el recurso escaso: con
+      el visor ocupando 44vh a la lista le quedaban cinco filas, y este panel
+      —que en movil ya arrancaba plegado— se llevaba una de ellas solo con su
+      cabecera.
+    -->
+    <MostTrackedPanel class="stacked:hidden" />
     <!--
       Panel principal: buscador + lista.
       `overflow-hidden` es necesario: cuando la barra lateral es baja (movil en
@@ -67,21 +73,19 @@ const activeFilterCount = computed(
     -->
     <div class="panel flex min-h-0 flex-1 flex-col overflow-hidden">
       <div class="panel-header">
-        <div>
-          <h2 class="panel-title">Live Sat Tracking</h2>
-          <p class="mt-0.5 text-[10px] text-ink-600">
+        <div class="min-w-0">
+          <h2 class="panel-title">Seguimiento en vivo</h2>
+          <!--
+            En movil solo el recuento: la procedencia de los datos ya la dice el
+            indicador de la cabecera, y aqui partia el rotulo en dos lineas.
+          -->
+          <p class="mt-0.5 truncate text-[10px] text-ink-600">
             {{ store.filteredSatellites.length.toLocaleString('es-ES') }} de
-            {{ store.totalCount.toLocaleString('es-ES') }} objetos ·
-            {{ store.isDemoMode ? 'datos sinteticos' : 'TLE Celestrak' }}
+            {{ store.totalCount.toLocaleString('es-ES') }} objetos<span class="stacked:hidden">
+              · {{ store.isDemoMode ? 'datos sinteticos' : 'TLE Celestrak' }}</span
+            >
           </p>
         </div>
-        <button
-          type="button"
-          class="text-ink-600 transition-colors hover:text-ink-100"
-          aria-label="Opciones del panel"
-        >
-          <EllipsisVertical :size="15" />
-        </button>
       </div>
 
       <!-- Aviso de modo demo -->
@@ -184,24 +188,14 @@ const activeFilterCount = computed(
           />
         </div>
 
-        <button
-          v-if="store.hasActiveFilters"
-          type="button"
-          class="flex items-center gap-1 text-[10px] text-ink-500 transition-colors hover:text-ink-100"
-          @click="store.resetFilters()"
-        >
-          <X :size="11" />
-          Limpiar todos los filtros
-        </button>
-      </div>
-
-      <!-- Lista -->
-      <div class="flex min-h-0 flex-1 flex-col border-t border-grid-800">
-        <div class="px-3 pb-2 pt-2.5">
-          <h3 class="panel-title">Active Satellites</h3>
-          <!-- El orden va en su propia fila: en un panel de 300 px no cabe
-               junto al titulo sin partir las etiquetas. -->
-          <div class="mt-1.5 flex items-center gap-0.5">
+        <!--
+          El orden vive con los filtros, no sobre la lista. Son la misma
+          pregunta —"como quiero ver el catalogo"— y sobre la lista ocupaba una
+          fila permanente que en movil valia dos satelites visibles.
+        -->
+        <div>
+          <span class="telemetry-label mb-1.5 block">Orden</span>
+          <div class="flex items-center gap-0.5">
             <button
               v-for="mode in SORT_MODES"
               :key="mode.id"
@@ -219,6 +213,21 @@ const activeFilterCount = computed(
             </button>
           </div>
         </div>
+
+        <button
+          v-if="store.hasActiveFilters"
+          type="button"
+          class="flex items-center gap-1 text-[10px] text-ink-500 transition-colors hover:text-ink-100"
+          @click="store.resetFilters()"
+        >
+          <X :size="11" />
+          Limpiar todos los filtros
+        </button>
+      </div>
+
+      <!-- Lista: sin cabecera propia. El titulo del panel ya dice que es y
+           cuantos objetos hay, y el orden se ajusta desde los filtros. -->
+      <div class="flex min-h-0 flex-1 flex-col border-t border-grid-800">
         <SatelliteList />
       </div>
     </div>

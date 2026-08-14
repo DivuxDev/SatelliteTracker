@@ -23,18 +23,12 @@ import {
 } from 'cesium'
 import {
   Globe as GlobeIcon,
-  Layers,
   Maximize2,
   Minus,
-  Orbit as OrbitIcon,
   Palette,
   Plus,
   RotateCcw,
-  Sparkles,
-  Sun,
-  Target,
   TriangleAlert,
-  Waypoints,
   WifiOff,
 } from '@lucide/vue'
 
@@ -75,18 +69,23 @@ provide(CESIUM_VIEWER_KEY, viewer)
 
 const initError = ref(null)
 const is2D = ref(false)
-const showOrbit = ref(true)
-const showGroundTrack = ref(false)
-const showFootprint = ref(true)
-const lightingEnabled = ref(false)
+
 /**
- * Campo de estrellas de fondo (skyBox de Cesium). Desactivado por defecto: sin
- * el, el espacio queda como un plano negro limpio y los satelites (que tambien
- * son puntos brillantes) dejan de competir con el ruido del fondo.
+ * Capas del satelite seleccionado. Ya no son conmutables: el anillo orbital y
+ * la huella de cobertura son las dos que responden a "por donde va" y "que ve
+ * desde ahi", y se quedan siempre puestas. La traza terrestre y el campo de
+ * estrellas se retiraron —la primera duplicaba informacion del anillo, el
+ * segundo competia visualmente con los satelites, que tambien son puntos
+ * brillantes—.
  */
-const showStars = ref(false)
-/** Solo aplica por debajo de sm: en escritorio el panel de capas siempre esta abierto. */
-const layersOpen = ref(false)
+const SHOW_ORBIT = true
+const SHOW_FOOTPRINT = true
+
+/**
+ * Iluminacion solar. Ya no tiene conmutador propio: la manda el tema del globo,
+ * porque "Dia y noche" no es mas que este ajuste activado.
+ */
+const lightingEnabled = ref(false)
 
 /* Temas del globo */
 const themeId = ref(loadThemeId())
@@ -144,9 +143,10 @@ async function initViewer() {
   // --- Ajustes independientes del tema -------------------------------------
   scene.skyAtmosphere.hueShift = 0.02
   scene.sun.show = false
-  // El skyBox es el campo de estrellas; la atmosfera del limbo es otra cosa y
-  // se mantiene siempre.
-  scene.skyBox.show = showStars.value
+  // El skyBox es el campo de estrellas, siempre apagado: competia con los
+  // satelites, que tambien son puntos brillantes, y los objetos MEO y GEO se
+  // confundian con el fondo. La atmosfera del limbo es otra cosa y se mantiene.
+  scene.skyBox.show = false
   scene.moon.show = false
   scene.fog.enabled = false
   scene.highDynamicRange = false
@@ -171,15 +171,8 @@ async function initViewer() {
 /* Temas del globo                                                            */
 /* -------------------------------------------------------------------------- */
 
-/* Los dos paneles flotantes son excluyentes: juntos taparian medio visor. */
 function toggleThemePicker() {
   themePickerOpen.value = !themePickerOpen.value
-  layersOpen.value = false
-}
-
-function toggleLayersPanel() {
-  layersOpen.value = !layersOpen.value
-  themePickerOpen.value = false
 }
 
 async function selectTheme(id, { persist = true } = {}) {
@@ -357,16 +350,6 @@ function toggleSceneMode() {
   else instance.scene.morphTo3D(1.2)
 }
 
-function toggleLighting() {
-  lightingEnabled.value = !lightingEnabled.value
-  if (viewer.value) viewer.value.scene.globe.enableLighting = lightingEnabled.value
-}
-
-function toggleStars() {
-  showStars.value = !showStars.value
-  if (viewer.value) viewer.value.scene.skyBox.show = showStars.value
-}
-
 async function toggleFullscreen() {
   const element = container.value?.parentElement
   if (!element) return
@@ -412,13 +395,6 @@ const CONTROLS = computed(() => [
   { id: 'fullscreen', icon: Maximize2, label: 'Pantalla completa', action: toggleFullscreen },
 ])
 
-const LAYER_TOGGLES = computed(() => [
-  { id: 'orbit', icon: OrbitIcon, label: 'Anillo orbital', model: showOrbit },
-  { id: 'ground', icon: Waypoints, label: 'Traza terrestre', model: showGroundTrack },
-  { id: 'footprint', icon: Target, label: 'Huella de cobertura', model: showFootprint },
-  { id: 'lighting', icon: Sun, label: 'Iluminacion solar', model: lightingEnabled, action: toggleLighting },
-  { id: 'stars', icon: Sparkles, label: 'Estrellas de fondo', model: showStars, action: toggleStars },
-])
 </script>
 
 <template>
@@ -428,11 +404,7 @@ const LAYER_TOGGLES = computed(() => [
     <!-- Capas 3D: se montan cuando el viewer existe -->
     <template v-if="viewer">
       <SatelliteEntity />
-      <OrbitPolyline
-        :show-orbit="showOrbit"
-        :show-ground-track="showGroundTrack"
-        :show-footprint="showFootprint"
-      />
+      <OrbitPolyline :show-orbit="SHOW_ORBIT" :show-footprint="SHOW_FOOTPRINT" />
     </template>
 
     <!-- Controles de camara (arriba izquierda). Objetivos tactiles de 36 px en movil. -->
@@ -452,13 +424,10 @@ const LAYER_TOGGLES = computed(() => [
       </button>
     </div>
 
-    <!--
-      Capas visibles (arriba derecha). En movil el panel abierto taparia medio
-      globo, asi que se pliega tras un boton y solo se despliega al tocarlo.
-    -->
+    <!-- Tema del globo (arriba derecha). El selector de capas se retiro: el
+         anillo y la huella van siempre puestos y no hay nada que conmutar. -->
     <div class="absolute right-3 top-3 flex flex-col items-end gap-1">
       <div class="flex items-center gap-1">
-        <!-- Selector de tema del globo -->
         <button
           type="button"
           class="flex h-9 w-9 items-center justify-center rounded-md border border-grid-700 bg-space-800/90 text-ink-300 backdrop-blur transition-colors hover:text-accent-400 sm:h-8 sm:w-8"
@@ -469,17 +438,6 @@ const LAYER_TOGGLES = computed(() => [
           @click="toggleThemePicker"
         >
           <Palette :size="15" />
-        </button>
-
-        <button
-          type="button"
-          class="flex h-9 w-9 items-center justify-center rounded-md border border-grid-700 bg-space-800/90 text-ink-300 backdrop-blur transition-colors sm:hidden"
-          :class="layersOpen && 'border-accent-500/60 text-accent-400'"
-          :aria-expanded="layersOpen"
-          aria-label="Capas del visor"
-          @click="toggleLayersPanel"
-        >
-          <Layers :size="15" />
         </button>
       </div>
 
@@ -524,36 +482,6 @@ const LAYER_TOGGLES = computed(() => [
         </p>
       </div>
 
-      <!-- max-h evita que el panel desborde el visor cuando este es bajo
-           (movil en horizontal), donde chocaba con los controles inferiores.
-           Con el selector de temas abierto se oculta: apilados taparian el
-           globo entero. -->
-      <div
-        class="max-h-[calc(100%-1rem)] flex-col gap-1 overflow-y-auto rounded-md border border-grid-700 bg-space-800/90 p-1 backdrop-blur"
-        :class="themePickerOpen ? 'hidden' : layersOpen ? 'flex' : 'hidden sm:flex'"
-      >
-        <span
-          class="hidden px-1.5 pt-0.5 text-[9px] font-semibold tracking-[0.12em] text-ink-600 sm:block"
-        >
-          CAPAS
-        </span>
-        <button
-          v-for="toggle in LAYER_TOGGLES"
-          :key="toggle.id"
-          type="button"
-          class="flex items-center gap-2 rounded px-1.5 py-1.5 text-[11px] transition-colors sm:py-1"
-          :class="
-            toggle.model.value
-              ? 'bg-accent-500/10 text-accent-400'
-              : 'text-ink-500 hover:text-ink-300'
-          "
-          :title="toggle.label"
-          @click="toggle.action ? toggle.action() : (toggle.model.value = !toggle.model.value)"
-        >
-          <component :is="toggle.icon" :size="12" />
-          <span class="pr-1">{{ toggle.label }}</span>
-        </button>
-      </div>
     </div>
 
     <!--

@@ -61,13 +61,18 @@ Copia `.env.example` a `.env`:
   `PointPrimitiveCollection` (un solo draw call).
 - Tooltip al pasar el ratón con nombre, ID NORAD, altitud y velocidad.
 - Clic sobre un punto (o sobre una fila de la lista) para seleccionarlo.
-- Capas conmutables: anillo orbital, traza terrestre, huella de cobertura,
-  iluminación solar (terminador día/noche) y estrellas de fondo.
-- **Las estrellas de fondo vienen desactivadas.** El campo de estrellas de Cesium
-  compite visualmente con los satélites, que también son puntos brillantes: los
-  objetos MEO y GEO (violeta y cian) se confundían con el fondo. Sin él, el
-  espacio queda como un plano negro limpio y lo único luminoso son los satélites.
-  Se puede reactivar desde el panel de capas.
+- Dos capas fijas sobre el satélite seleccionado: **anillo orbital** (por dónde
+  va) y **huella de cobertura** (qué alcanza desde ahí). No son conmutables —
+  responden a las dos preguntas que siempre se hacen, así que no había nada que
+  decidir.
+- **Sin campo de estrellas.** El skyBox de Cesium competía visualmente con los
+  satélites, que también son puntos brillantes: los objetos MEO y GEO (violeta y
+  cian) se confundían con el fondo. Sin él, el espacio queda como un plano negro
+  limpio y lo único luminoso son los satélites.
+- **Sin traza terrestre.** Duplicaba lo que ya cuenta el anillo orbital y añadía
+  una segunda polilínea que había que trocear en el antimeridiano.
+- La iluminación solar la manda el tema del globo: *Día y noche* no es otra cosa
+  que ese ajuste activado.
 - Controles de zoom, reencuadre, 2D/3D y pantalla completa.
 - Reloj de simulación con multiplicadores 1x / 10x / 60x / 300x, pausa y retorno
   al tiempo real.
@@ -120,10 +125,37 @@ tales y sin cifras de uso inventadas.
 - Ficha del seleccionado: altitud, inclinación, latitud, longitud, periodo,
   velocidad y operador, con aviso cuando el TLE tiene más de 14 días.
 
+### Qué es este objeto
+El modal de detalles abre con una ficha que responde a *"¿y esto qué es?"* antes
+que con números: tipo de misión (navegación, comunicaciones, meteorológico,
+observación de la Tierra, científico, militar, estación tripulada, carguero,
+demostración tecnológica o basura orbital), para qué sirve y qué revela su órbita.
+
+**Los TLE no traen nada de esto.** Celestrak da un nombre y dos líneas de
+elementos; el propósito de la misión solo está en fuentes externas de decenas de
+miles de registros. Así que hay dos mecanismos, y la interfaz distingue cuál se
+ha usado:
+
+| Origen | Etiqueta | Qué es |
+|---|---|---|
+| `CURATED` | **ficha propia** | Texto verificado, escrito a mano, indexado por ID NORAD |
+| `MISSION_RULES` | **deducido** | Tipo inferido del nombre por patrones. Heurística: acierta en familias grandes y falla en nombres crípticos |
+
+Lo que no encaja en ninguno queda como *"Sin clasificar"* en vez de recibir un
+tipo plausible: un tipo inventado es peor que un hueco, porque el hueco se ve.
+
+Aparte va **"Lo que dice su órbita"**, que no es heurística: sale de los números
+del TLE. Detecta órbitas heliosíncronas (inclinación 95–105°), geoestacionarias,
+alta excentricidad o el número de vueltas al día.
+
+Las fichas curadas llevan **alias** que alimentan el buscador. Celestrak llama
+`HST` al Hubble e `ISS (ZARYA)` a la estación, así que buscar "hubble" no
+encontraba nada; ahora sí.
+
 ### Acciones sobre un satélite
 - **Track** — fija la cámara sobre el satélite mientras se mueve.
-- **Details** — modal con elementos keplerianos, geometría derivada y el TLE en
-  crudo (copiable).
+- **Details** — ficha de misión, elementos keplerianos, geometría derivada y el
+  TLE en crudo (copiable).
 - **Pasadas** — simulador de pasadas sobre tierra: ubicación por GPS o manual,
   elevación mínima, ventana de búsqueda, lista de próximas pasadas con hora de
   inicio/fin, elevación máxima, azimuts y distancia mínima, más una gráfica polar
@@ -280,7 +312,7 @@ src/
 ├── data/                   demoConstellation.js (catálogo sintético de respaldo)
 ├── services/               celestrakService.js, orbitCalculationService.js,
 │                           passPredictorService.js, globeThemeService.js,
-│                           trackingStatsService.js
+│                           trackingStatsService.js, satelliteProfileService.js
 ├── stores/                 satelliteStore.js
 ├── views/                  DashboardView
 ├── workers/                propagator.worker.js
