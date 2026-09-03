@@ -30,7 +30,7 @@ const SECTIONS = [
     icon: Rocket,
     title: 'Que es esta app',
     paragraphs: [
-      'Un rastreador en tiempo real de satelites en orbita terrestre. Descarga los elementos orbitales publicos (TLE) de Celestrak, calcula su posicion con el mismo modelo matematico que usan los operadores reales (SGP4/SDP4) y los dibuja sobre un globo 3D que gira de verdad.',
+      'CosmoTrack es un rastreador en tiempo real de satelites en orbita terrestre. Descarga los elementos orbitales publicos (TLE) de Celestrak, calcula su posicion con el mismo modelo matematico que usan los operadores reales (SGP4/SDP4) y los dibuja sobre un globo 3D que gira de verdad.',
       'No es una foto ni una animacion: cada punto se recalcula varias veces por segundo a partir de datos reales, asi que lo que ves es donde esta ese objeto ahora mismo (o donde estara, si aceleras el reloj de simulacion).',
     ],
   },

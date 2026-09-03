@@ -1,4 +1,4 @@
-# Satellite Orbit Tracker
+# CosmoTrack
 
 Rastreador 3D en tiempo real de satélites en órbita terrestre. Descarga los TLE
 públicos de Celestrak, los propaga con SGP4/SDP4 y los dibuja sobre un globo de

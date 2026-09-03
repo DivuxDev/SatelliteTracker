@@ -1,9 +1,9 @@
 {
-  "name": "satellite-orbit-tracker",
+  "name": "cosmotrack",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Rastreador 3D en tiempo real de satelites en orbita (Vue 3 + CesiumJS + satellite.js)",
+  "description": "CosmoTrack: rastreador 3D en tiempo real de satelites en orbita (Vue 3 + CesiumJS + satellite.js)",
   "scripts": {
     "predev": "node scripts/copy-cesium-assets.mjs",
     "dev": "vite",

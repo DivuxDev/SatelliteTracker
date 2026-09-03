@@ -65,22 +65,21 @@ async function resync() {
       -->
       <img
         src="/favicon-32.svg"
-        alt="Satellite Orbit Tracker"
+        alt="CosmoTrack"
         width="32"
         height="32"
         class="h-8 w-8 shrink-0 wide:h-7 wide:w-7 wide:rounded-lg wide:shadow-[0_0_0_1px_rgba(127,181,242,.35)]"
       />
-      <h1
-        class="hidden text-[13px] font-semibold tracking-[0.14em] text-ink-100 md:block xl:hidden wide:!hidden"
-      >
-        ORBIT TRACKER
-      </h1>
-      <h1 class="hidden text-[13px] font-semibold tracking-[0.14em] text-ink-100 xl:block wide:!hidden">
-        SATELLITE ORBIT TRACKER
+      <!--
+        Un solo rotulo: a diferencia del nombre anterior, "COSMOTRACK" ya cabe
+        entero desde el breakpoint medio, asi que no hace falta version corta.
+      -->
+      <h1 class="hidden text-[13px] font-semibold tracking-[0.14em] text-ink-100 md:block wide:!hidden">
+        COSMOTRACK
       </h1>
       <!-- Version HUD del titulo: unica, siempre visible en escritorio -->
       <h1 class="hidden text-t1 font-semibold text-hud-ink-accent hud-title wide:block">
-        SATELLITE ORBIT TRACKER
+        COSMOTRACK
       </h1>
     </div>
 
