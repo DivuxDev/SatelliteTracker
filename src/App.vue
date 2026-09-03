@@ -18,6 +18,7 @@ import TelemetryModal from '@/components/satellite/TelemetryModal.vue'
 import GroundPassSimulator from '@/components/satellite/GroundPassSimulator.vue'
 import DiagnosticsModal from '@/components/layout/DiagnosticsModal.vue'
 import HelpModal from '@/components/layout/HelpModal.vue'
+import CosmicEventsModal from '@/components/sky/CosmicEventsModal.vue'
 
 const store = useSatelliteStore()
 
@@ -72,6 +73,7 @@ onBeforeUnmount(() => {
       <DashboardView
         @open-details="openModal('details')"
         @open-passes="openModal('passes')"
+        @open-cosmic-events="openModal('cosmic-events')"
       />
     </main>
 
@@ -79,5 +81,6 @@ onBeforeUnmount(() => {
     <GroundPassSimulator :open="isModalOpen('passes')" @close="closeModal('passes')" />
     <DiagnosticsModal :open="isModalOpen('diagnostics')" @close="closeModal('diagnostics')" />
     <HelpModal :open="isModalOpen('help')" @close="closeModal('help')" />
+    <CosmicEventsModal :open="isModalOpen('cosmic-events')" @close="closeModal('cosmic-events')" />
   </div>
 </template>

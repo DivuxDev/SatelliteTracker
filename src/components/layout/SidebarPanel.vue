@@ -7,7 +7,7 @@
  * que se propagan hacia arriba para que App.vue controle los modales.
  */
 import { computed, ref } from 'vue'
-import { ListFilter, Search, TriangleAlert, X } from '@lucide/vue'
+import { ListFilter, MoonStar, Search, TriangleAlert, X } from '@lucide/vue'
 
 import { SORT_MODES, useSatelliteStore } from '@/stores/satelliteStore'
 import { ORBIT_REGIMES } from '@/services/orbitCalculationService'
@@ -17,7 +17,7 @@ import SatelliteList from '@/components/satellite/SatelliteList.vue'
 import SatelliteCard from '@/components/satellite/SatelliteCard.vue'
 import MostTrackedPanel from '@/components/satellite/MostTrackedPanel.vue'
 
-const emit = defineEmits(['open-details', 'open-passes'])
+const emit = defineEmits(['open-details', 'open-passes', 'open-cosmic-events'])
 
 const store = useSatelliteStore()
 const showFilters = ref(false)
@@ -132,6 +132,15 @@ const activeFilterCount = computed(
           >
             {{ activeFilterCount }}
           </span>
+        </button>
+        <button
+          type="button"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent-300/22 bg-[rgba(5,10,20,.5)] text-hud-ink-500 transition-colors hover:text-hud-ink-300 wide:h-[34px] wide:w-[34px]"
+          aria-label="Eventos cosmicos"
+          title="Eventos cosmicos: lluvias de meteoros y satelites en reentrada"
+          @click="emit('open-cosmic-events')"
+        >
+          <MoonStar :size="14" />
         </button>
       </div>
 

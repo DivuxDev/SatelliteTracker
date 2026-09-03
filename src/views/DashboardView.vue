@@ -16,7 +16,7 @@ import { useSatelliteStore } from '@/stores/satelliteStore'
 import GlobeViewer from '@/components/cesium/GlobeViewer.vue'
 import SidebarPanel from '@/components/layout/SidebarPanel.vue'
 
-const emit = defineEmits(['open-details', 'open-passes'])
+const emit = defineEmits(['open-details', 'open-passes', 'open-cosmic-events'])
 
 const store = useSatelliteStore()
 
@@ -127,6 +127,7 @@ const simulatedLabel = computed(() => {
     <SidebarPanel
       @open-details="emit('open-details')"
       @open-passes="emit('open-passes')"
+      @open-cosmic-events="emit('open-cosmic-events')"
     />
   </div>
 </template>

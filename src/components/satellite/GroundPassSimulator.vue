@@ -24,6 +24,7 @@ import {
 } from '@/services/observerLocationService'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
+import StreetHorizonPanel from './StreetHorizonPanel.vue'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -518,6 +519,9 @@ function formatDay(date) {
               </ul>
             </div>
           </div>
+
+          <!-- Horizonte a pie de calle: bajo la grafica polar y la lista, ancho completo -->
+          <StreetHorizonPanel v-if="selectedPass" :observer="observer" :pass="selectedPass" class="mt-4" />
         </div>
       </div>
     </div>
