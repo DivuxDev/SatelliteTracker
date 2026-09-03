@@ -11,7 +11,9 @@ import { Crosshair, Info, Telescope, X } from '@lucide/vue'
 
 import { useSatelliteStore } from '@/stores/satelliteStore'
 import { ORBIT_REGIMES, tleAgeDays } from '@/services/orbitCalculationService'
+import { getSatelliteProfile } from '@/services/satelliteProfileService'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import MissionEmblem from './MissionEmblem.vue'
 
 const emit = defineEmits(['open-details', 'open-passes'])
 
@@ -22,6 +24,9 @@ const telemetry = computed(() => store.selectedTelemetry)
 const regime = computed(() =>
   satellite.value ? ORBIT_REGIMES[satellite.value.regime] : null,
 )
+// No lee `uiTick`: el tipo de mision no cambia con la telemetria en vivo, asi
+// que no hace falta recalcularlo al refresco de 2 Hz de la ficha.
+const profile = computed(() => (satellite.value ? getSatelliteProfile(satellite.value) : null))
 
 const tleAge = computed(() => {
   // eslint-disable-next-line no-unused-expressions -- refresco a 2 Hz
@@ -55,10 +60,15 @@ function formatCoord(value, positive, negative) {
   -->
   <section
     v-if="satellite"
-    class="panel max-h-[60%] shrink-0 overflow-y-auto stacked:fixed stacked:inset-x-0 stacked:bottom-0 stacked:z-30 stacked:max-h-[72vh] stacked:rounded-b-none stacked:border-x-0 stacked:border-b-0 stacked:shadow-2xl stacked:shadow-black/70"
+    class="panel hud-panel-featured max-h-[60%] shrink-0 overflow-y-auto stacked:fixed stacked:inset-x-0 stacked:bottom-0 stacked:z-30 stacked:h-[417px] stacked:max-h-[417px] stacked:rounded-b-none stacked:rounded-t-[18px] stacked:border-x-0 stacked:border-b-0 stacked:bg-[rgba(7,14,26,.86)] stacked:backdrop-blur-[16px]"
   >
-    <div class="panel-header stacked:sticky stacked:top-0 stacked:z-10 stacked:bg-space-800">
-      <h2 class="panel-title">Satellite Details</h2>
+    <!-- Asa de arrastre: puramente visual, la ficha se cierra con la X. -->
+    <div class="hidden justify-center pb-1 pt-2 stacked:flex">
+      <span class="h-1 w-9 rounded-full bg-accent-300/30" />
+    </div>
+
+    <div class="panel-header border-b-[rgba(127,181,242,.16)] stacked:border-b-0 stacked:pt-1 wide:px-3.5 wide:py-3">
+      <h2 class="panel-title">Detalle del satelite</h2>
       <button
         type="button"
         class="text-ink-600 transition-colors hover:text-ink-100"
@@ -69,47 +79,17 @@ function formatCoord(value, positive, negative) {
       </button>
     </div>
 
-    <div class="p-3">
+    <div class="p-3 wide:p-3.5">
       <div class="flex gap-3">
-        <!-- Distintivo orbital: esquema del regimen, no una foto generica -->
-        <div
-          class="relative flex h-[74px] w-[74px] shrink-0 items-center justify-center rounded-md border border-grid-700 bg-space-850 overflow-hidden"
-        >
-          <svg viewBox="0 0 74 74" class="absolute inset-0 h-full w-full">
-            <defs>
-              <radialGradient :id="`earth-${satellite.id}`" cx="38%" cy="34%" r="70%">
-                <stop offset="0%" stop-color="#243348" />
-                <stop offset="100%" stop-color="#0d131d" />
-              </radialGradient>
-            </defs>
-            <circle cx="37" cy="37" r="17" :fill="`url(#earth-${satellite.id})`" />
-            <circle cx="37" cy="37" r="17" fill="none" stroke="#38bdf8" stroke-opacity="0.25" />
-            <ellipse
-              cx="37"
-              cy="37"
-              :rx="satellite.regime === 'GEO' ? 30 : satellite.regime === 'MEO' ? 26 : 22"
-              :ry="satellite.regime === 'HEO' ? 12 : 8"
-              fill="none"
-              :stroke="regime?.color ?? '#3b82f6'"
-              stroke-width="1.1"
-              :transform="`rotate(${-satellite.elements.inclination * 0.55} 37 37)`"
-              opacity="0.9"
-            />
-            <circle
-              :cx="37 + (satellite.regime === 'GEO' ? 30 : satellite.regime === 'MEO' ? 26 : 22) * 0.72"
-              :cy="37 - 6"
-              r="2.4"
-              :fill="regime?.color ?? '#3b82f6'"
-            />
-          </svg>
-        </div>
+        <!-- Distintivo: forma segun el tipo de mision, color segun el regimen orbital -->
+        <MissionEmblem :type-id="profile?.type?.id ?? 'unknown'" :color="regime?.color ?? '#7fb5f2'" :size="50" />
 
         <!-- Identidad y telemetria principal -->
         <div class="min-w-0 flex-1">
           <div class="flex items-start justify-between gap-2">
-            <h3 class="truncate text-sm font-semibold text-ink-100">{{ satellite.name }}</h3>
+            <h3 class="truncate text-t4 font-semibold text-hud-ink-100">{{ satellite.name }}</h3>
             <span
-              class="shrink-0 rounded border px-1.5 py-0.5 font-mono text-[10px]"
+              class="shrink-0 rounded-full border px-1.5 py-0.5 font-mono text-t1"
               :style="{
                 color: regime?.color,
                 borderColor: `${regime?.color}55`,
@@ -120,71 +100,72 @@ function formatCoord(value, positive, negative) {
             </span>
           </div>
 
-          <p class="mt-0.5 truncate font-mono text-[10px] text-ink-600">
+          <p class="mt-0.5 truncate font-mono text-t1 text-hud-ink-500">
             NORAD {{ satellite.id }}<span v-if="satellite.intlDes"> · {{ satellite.intlDes }}</span>
           </p>
-
-          <dl class="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
-            <div>
-              <dt class="telemetry-label">Alt</dt>
-              <dd class="telemetry-value">
-                {{ telemetry ? `${telemetry.altitudeKm.toFixed(0)} km` : '—' }}
-              </dd>
-            </div>
-            <div>
-              <dt class="telemetry-label">Incl</dt>
-              <dd class="telemetry-value">{{ satellite.elements.inclination.toFixed(2) }}°</dd>
-            </div>
-            <div>
-              <dt class="telemetry-label">Lat</dt>
-              <dd class="telemetry-value">
-                {{ formatCoord(telemetry?.latitude, 'N', 'S') }}
-              </dd>
-            </div>
-            <div>
-              <dt class="telemetry-label">Long</dt>
-              <dd class="telemetry-value">
-                {{ formatCoord(telemetry?.longitude, 'E', 'O') }}
-              </dd>
-            </div>
-          </dl>
         </div>
       </div>
 
-      <!-- Segunda fila de telemetria -->
-      <dl class="mt-3 grid grid-cols-3 gap-2 border-t border-grid-800 pt-2.5">
+      <!--
+        Rejilla de telemetria: 3x2 en escritorio (los 6 valores), 2x2 en movil
+        —altitud, inclinacion, periodo y velocidad—, con valores a t4. Se
+        oculta latitud/longitud en vez de duplicar el marcado: al desaparecer
+        del flujo, la rejilla de 2 columnas los recoloca sola en 2x2.
+      -->
+      <dl class="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-accent-300/16 pt-2.5 wide:grid-cols-3 wide:pt-3">
         <div>
-          <dt class="telemetry-label">Periodo</dt>
-          <dd class="telemetry-value">{{ periodLabel }}</dd>
-        </div>
-        <div>
-          <dt class="telemetry-label">Velocidad</dt>
-          <dd class="telemetry-value">
-            {{ telemetry ? `${telemetry.speedKmS.toFixed(2)} km/s` : '—' }}
+          <dt class="telemetry-label">Altitud</dt>
+          <dd class="telemetry-value stacked:text-t4">
+            {{ telemetry ? `${telemetry.altitudeKm.toFixed(0)} km` : '—' }}
           </dd>
         </div>
         <div>
-          <dt class="telemetry-label">Operador</dt>
-          <dd class="truncate text-[11px] text-ink-300" :title="satellite.operator">
-            {{ satellite.operator }}
+          <dt class="telemetry-label">Inclinacion</dt>
+          <dd class="telemetry-value stacked:text-t4">{{ satellite.elements.inclination.toFixed(2) }}°</dd>
+        </div>
+        <div class="stacked:hidden">
+          <dt class="telemetry-label">Latitud</dt>
+          <dd class="telemetry-value">
+            {{ formatCoord(telemetry?.latitude, 'N', 'S') }}
+          </dd>
+        </div>
+        <div class="stacked:hidden">
+          <dt class="telemetry-label">Longitud</dt>
+          <dd class="telemetry-value">
+            {{ formatCoord(telemetry?.longitude, 'E', 'O') }}
+          </dd>
+        </div>
+        <div>
+          <dt class="telemetry-label">Periodo</dt>
+          <dd class="telemetry-value stacked:text-t4">{{ periodLabel }}</dd>
+        </div>
+        <div>
+          <dt class="telemetry-label">Velocidad</dt>
+          <dd class="telemetry-value stacked:text-t4">
+            {{ telemetry ? `${telemetry.speedKmS.toFixed(2)} km/s` : '—' }}
           </dd>
         </div>
       </dl>
 
+      <p class="mt-2 truncate text-t2 text-hud-ink-300" :title="satellite.operator">
+        {{ satellite.operator }}
+      </p>
+
       <p
         v-if="tleWarning"
-        class="mt-2.5 rounded border border-warn-500/30 bg-warn-500/10 px-2 py-1.5 text-[10px] leading-relaxed text-warn-500"
+        class="mt-2.5 rounded border border-warn-500/30 bg-warn-500/10 px-2 py-1.5 text-t2 leading-relaxed text-warn-500"
       >
         TLE de hace {{ tleAge.toFixed(1) }} dias. La precision de SGP4 se degrada notablemente
         pasadas dos semanas: resincroniza antes de usar estos datos para apuntar.
       </p>
 
-      <!-- Acciones -->
+      <!-- Acciones: objetivo tactil minimo de 44px en movil. -->
       <div class="mt-3 grid grid-cols-3 gap-1.5">
         <BaseButton
           :variant="store.trackedId === satellite.id ? 'primary' : 'secondary'"
           size="sm"
           block
+          class="rounded-full text-t2 stacked:h-11 wide:h-9"
           :title="
             store.trackedId === satellite.id
               ? 'Liberar la camara'
@@ -193,13 +174,13 @@ function formatCoord(value, positive, negative) {
           @click="store.toggleTracking(satellite.id)"
         >
           <Crosshair :size="12" />
-          Track
+          Seguir
         </BaseButton>
-        <BaseButton variant="secondary" size="sm" block @click="emit('open-details')">
+        <BaseButton variant="secondary" size="sm" block class="rounded-full border-accent-300/32 text-t2 stacked:h-11 wide:h-9" @click="emit('open-details')">
           <Info :size="12" />
-          Details
+          Detalles
         </BaseButton>
-        <BaseButton variant="secondary" size="sm" block @click="emit('open-passes')">
+        <BaseButton variant="secondary" size="sm" block class="rounded-full border-accent-300/32 text-t2 stacked:h-11 wide:h-9" @click="emit('open-passes')">
           <Telescope :size="12" />
           Pasadas
         </BaseButton>
@@ -209,9 +190,9 @@ function formatCoord(value, positive, negative) {
 
   <!-- Estado vacio: solo con el layout en dos columnas. Apilado ocuparia una
        hoja permanente sin contenido, robandole sitio a la lista. -->
-  <section v-else class="panel hidden shrink-0 p-5 text-center wide:block">
-    <p class="text-xs text-ink-500">Selecciona un satelite</p>
-    <p class="mt-1 text-[11px] leading-relaxed text-ink-600">
+  <section v-else class="panel hud-panel-featured hidden shrink-0 p-5 text-center wide:block">
+    <p class="text-t2 text-hud-ink-300">Selecciona un satelite</p>
+    <p class="mt-1 text-t1 leading-relaxed text-hud-ink-600">
       Pulsa un punto del globo o una fila de la lista para ver su telemetria en vivo, su orbita y
       las proximas pasadas sobre tu posicion.
     </p>

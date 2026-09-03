@@ -22,8 +22,17 @@ import { ORBIT_REGIMES } from '@/services/orbitCalculationService'
 
 const store = useSatelliteStore()
 
-/** Alto fijo de fila, en px. La virtualizacion depende de que sea constante. */
-const ROW_HEIGHT = 48
+/*
+ * Alto de fila: 44px en escritorio, 54px en movil (especificacion de diseno).
+ * La virtualizacion depende de que sea constante EN CADA RENDER, pero puede
+ * cambiar entre uno y otro si el layout cruza de `stacked` a `wide` — por eso
+ * es un ref derivado de las mismas dos media queries que la variante `wide`
+ * de Tailwind, no una constante.
+ */
+const WIDE_QUERIES = ['(min-width: 1024px)', '(min-width: 640px) and (max-height: 520px)']
+const isWide = ref(WIDE_QUERIES.some((q) => window.matchMedia(q).matches))
+const ROW_HEIGHT = computed(() => (isWide.value ? 44 : 54))
+
 /** Filas extra renderizadas por encima y por debajo, para que el scroll no parpadee. */
 const OVERSCAN = 6
 
@@ -34,10 +43,13 @@ const viewportHeight = ref(0)
 const total = computed(() => store.filteredSatellites.length)
 
 const firstIndex = computed(() =>
-  Math.max(0, Math.floor(scrollTop.value / ROW_HEIGHT) - OVERSCAN),
+  Math.max(0, Math.floor(scrollTop.value / ROW_HEIGHT.value) - OVERSCAN),
 )
 const lastIndex = computed(() =>
-  Math.min(total.value, Math.ceil((scrollTop.value + viewportHeight.value) / ROW_HEIGHT) + OVERSCAN),
+  Math.min(
+    total.value,
+    Math.ceil((scrollTop.value + viewportHeight.value) / ROW_HEIGHT.value) + OVERSCAN,
+  ),
 )
 
 /**
@@ -68,6 +80,11 @@ function regimeColor(regime) {
 /* -------------------------------------------------------------------------- */
 
 let resizeObserver = null
+const wideMediaQueries = WIDE_QUERIES.map((q) => window.matchMedia(q))
+
+function syncIsWide() {
+  isWide.value = wideMediaQueries.some((mql) => mql.matches)
+}
 
 onMounted(() => {
   if (!viewport.value) return
@@ -76,9 +93,13 @@ onMounted(() => {
     viewportHeight.value = entry.contentRect.height
   })
   resizeObserver.observe(viewport.value)
+  wideMediaQueries.forEach((mql) => mql.addEventListener('change', syncIsWide))
 })
 
-onBeforeUnmount(() => resizeObserver?.disconnect())
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+  wideMediaQueries.forEach((mql) => mql.removeEventListener('change', syncIsWide))
+})
 
 /* -------------------------------------------------------------------------- */
 /* Seguimiento de la seleccion                                                */
@@ -88,13 +109,14 @@ onBeforeUnmount(() => resizeObserver?.disconnect())
 function scrollToIndex(index) {
   const element = viewport.value
   if (!element || index < 0) return
-  const target = index * ROW_HEIGHT
-  const bottom = target + ROW_HEIGHT
+  const rowHeight = ROW_HEIGHT.value
+  const target = index * rowHeight
+  const bottom = target + rowHeight
   if (target < element.scrollTop) {
     element.scrollTop = target
   } else if (bottom > element.scrollTop + element.clientHeight) {
     // Lo dejamos centrado: aparecer pegado al borde inferior se lee peor.
-    element.scrollTop = target - element.clientHeight / 2 + ROW_HEIGHT
+    element.scrollTop = target - element.clientHeight / 2 + rowHeight
   }
 }
 
@@ -127,7 +149,7 @@ watch(
       columnas quedaba reducido a 84 px.
     -->
     <div
-      class="grid shrink-0 grid-cols-[1fr_46px_58px] items-center gap-2 border-b border-grid-800 px-3 pb-2 pt-1 sm:grid-cols-[1fr_50px_46px_58px]"
+      class="grid shrink-0 grid-cols-[1fr_46px_58px] items-center gap-2 border-b border-accent-300/10 px-3 pb-2 pt-1 sm:grid-cols-[1fr_50px_46px_58px] wide:px-3.5"
     >
       <span class="telemetry-label">Nombre</span>
       <span class="telemetry-label hidden sm:block">Estado</span>
@@ -143,8 +165,12 @@ watch(
           v-for="row in visibleRows"
           :key="row.id"
           type="button"
-          class="group absolute inset-x-0 grid grid-cols-[1fr_46px_58px] items-center gap-2 border-b border-grid-800/60 px-3 text-left transition-colors sm:grid-cols-[1fr_50px_46px_58px]"
-          :class="store.selectedId === row.id ? 'bg-accent-500/10' : 'hover:bg-space-750'"
+          class="group absolute inset-x-0 grid grid-cols-[1fr_46px_58px] items-center gap-2 border-b border-accent-300/10 px-3 text-left transition-colors sm:grid-cols-[1fr_50px_46px_58px] wide:px-3.5"
+          :class="
+            store.selectedId === row.id
+              ? 'bg-accent-500/16'
+              : 'hover:bg-accent-500/8'
+          "
           :style="{ height: `${ROW_HEIGHT}px`, transform: `translateY(${row.index * ROW_HEIGHT}px)` }"
           @click="store.select(row.id)"
           @mouseenter="store.setHovered(row.id)"
@@ -157,8 +183,8 @@ watch(
           />
 
           <span class="min-w-0">
-            <span class="block truncate text-xs font-medium text-ink-100">{{ row.name }}</span>
-            <span class="block truncate font-mono text-[10px] text-ink-600">
+            <span class="block truncate text-t3 font-semibold text-hud-ink-100">{{ row.name }}</span>
+            <span class="block truncate font-mono text-t1 tabular-nums text-hud-ink-500">
               {{ row.id }} · {{ row.countryLabel }}
             </span>
           </span>
@@ -171,27 +197,30 @@ watch(
                 color: row.healthy ? '#22c55e' : '#6b7a92',
               }"
             />
-            <span class="text-[10px]" :class="row.healthy ? 'text-signal-500' : 'text-ink-600'">
+            <span class="text-t1" :class="row.healthy ? 'text-signal-500' : 'text-hud-ink-600'">
               {{ row.healthy ? 'Active' : 'Stale' }}
             </span>
           </span>
 
           <span class="flex items-center gap-1.5">
             <span
-              class="h-2 w-2 shrink-0 rounded-sm"
-              :style="{ backgroundColor: regimeColor(row.regime) }"
+              class="h-2 w-2 shrink-0 rounded-full"
+              :style="{
+                backgroundColor: regimeColor(row.regime),
+                boxShadow: `0 0 8px ${regimeColor(row.regime)}`,
+              }"
             />
-            <span class="font-mono text-[11px] text-ink-300">{{ row.regime }}</span>
+            <span class="font-mono text-t1 text-hud-ink-500">{{ row.regime }}</span>
           </span>
 
           <span class="flex items-center justify-end gap-1.5">
-            <span class="font-mono text-[11px] tabular-nums text-ink-300">
+            <span class="font-mono text-t2 tabular-nums text-hud-ink-300">
               {{ row.speedKmS.toFixed(1) }}
             </span>
             <!-- Icono decorativo: en movil compite por ancho con el nombre. -->
             <Satellite
               :size="12"
-              class="hidden shrink-0 text-ink-600 transition-colors group-hover:text-accent-400 sm:block"
+              class="hidden shrink-0 text-hud-ink-600 transition-colors group-hover:text-accent-400 sm:block"
             />
           </span>
         </button>

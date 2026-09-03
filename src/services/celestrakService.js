@@ -64,7 +64,7 @@ export const CATEGORIES = [
     id: 'comms',
     label: 'Comunicaciones',
     short: 'COMMS',
-    color: '#3b82f6',
+    color: '#2f7fe0',
     groups: ['geo', 'intelsat', 'ses', 'iridium-NEXT', 'globalstar', 'orbcomm'],
     defaultOn: false,
   },

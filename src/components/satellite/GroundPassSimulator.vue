@@ -14,13 +14,14 @@ import { computed, ref, watch } from 'vue'
 import { Locate, MapPin, Telescope, TriangleAlert, X } from '@lucide/vue'
 
 import { useSatelliteStore } from '@/stores/satelliteStore'
+import { azimuthToCompass, formatDuration, predictPasses, sunElevationDeg } from '@/services/passPredictorService'
 import {
-  azimuthToCompass,
-  formatDuration,
-  predictPasses,
-  sunElevationDeg,
-  toGeodetic,
-} from '@/services/passPredictorService'
+  geolocationMessage,
+  geolocationState,
+  observer,
+  observerGeodetic,
+  requestGeolocation,
+} from '@/services/observerLocationService'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 
@@ -31,63 +32,16 @@ const emit = defineEmits(['close'])
 
 const store = useSatelliteStore()
 
-const OBSERVER_STORAGE_KEY = 'sot:observer'
-
 /* -------------------------------------------------------------------------- */
 /* Ubicacion del observador                                                   */
 /* -------------------------------------------------------------------------- */
 
-function loadObserver() {
-  try {
-    const stored = JSON.parse(localStorage.getItem(OBSERVER_STORAGE_KEY) ?? 'null')
-    if (stored && Number.isFinite(stored.latitude)) return stored
-  } catch {
-    /* almacenamiento no disponible */
-  }
-  // Por defecto, Madrid: hay que partir de algo concreto y verificable.
-  return { latitude: 40.4168, longitude: -3.7038, altitudeM: 650, label: 'Madrid (por defecto)' }
-}
-
-const observer = ref(loadObserver())
-const geolocationState = ref('idle') // idle | locating | denied | error
-const geolocationMessage = ref('')
-
-function persistObserver() {
-  try {
-    localStorage.setItem(OBSERVER_STORAGE_KEY, JSON.stringify(observer.value))
-  } catch {
-    /* almacenamiento no disponible */
-  }
-}
-
-function useCurrentLocation() {
-  if (!navigator.geolocation) {
-    geolocationState.value = 'error'
-    geolocationMessage.value = 'Este navegador no expone la API de geolocalizacion.'
-    return
-  }
-  geolocationState.value = 'locating'
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      observer.value = {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        altitudeM: position.coords.altitude ?? 0,
-        label: 'Ubicacion GPS',
-      }
-      geolocationState.value = 'idle'
-      persistObserver()
-      compute()
-    },
-    (error) => {
-      geolocationState.value = error.code === error.PERMISSION_DENIED ? 'denied' : 'error'
-      geolocationMessage.value =
-        error.code === error.PERMISSION_DENIED
-          ? 'Permiso de ubicacion denegado. Introduce las coordenadas a mano.'
-          : `No se pudo obtener la ubicacion: ${error.message}`
-    },
-    { enableHighAccuracy: false, timeout: 10_000, maximumAge: 300_000 },
-  )
+/** `observer`/`geolocationState`/`geolocationMessage` viven en
+ *  observerLocationService: los comparte tambien el panel de street view y
+ *  (mas adelante) el modal de eventos cosmicos, con la misma persistencia. */
+async function useCurrentLocation() {
+  await requestGeolocation()
+  if (geolocationState.value === 'idle') compute()
 }
 
 /* -------------------------------------------------------------------------- */
@@ -108,8 +62,9 @@ const selectedPass = computed(
 )
 
 const sunElevation = computed(() => {
+  if (!observerGeodetic.value) return Number.NaN
   try {
-    return sunElevationDeg(toGeodetic(observer.value), new Date())
+    return sunElevationDeg(observerGeodetic.value, new Date())
   } catch {
     return Number.NaN
   }
@@ -117,7 +72,7 @@ const sunElevation = computed(() => {
 
 function compute() {
   const satellite = store.selectedSatellite
-  if (!satellite) return
+  if (!satellite || !observerGeodetic.value) return
 
   isComputing.value = true
   computeError.value = null
@@ -136,7 +91,6 @@ function compute() {
       })
       passes.value = result
       selectedPassId.value = result[0]?.id ?? null
-      persistObserver()
     } catch (error) {
       computeError.value = error?.message ?? String(error)
     } finally {

@@ -46,17 +46,14 @@ const activeFilterCount = computed(
 
 <template>
   <!--
-    En movil el inspector ocupa todo el ancho por debajo del visor; a partir de
-    lg vuelve a ser la columna lateral de ancho fijo.
-  -->
-  <!--
-    Ancho con `clamp` en una sola declaracion en lugar de encadenar `wide:` y
-    `xl:`: al ser `wide` una variante propia, su orden en la cascada frente a los
-    breakpoints de serie no esta garantizado y `xl:` acababa perdiendo.
-    El resultado: 300 px como minimo, 360 como maximo, y escalado en medio.
+    Flota siempre sobre el globo, en posicion absoluta, en ambos layouts —solo
+    cambian las coordenadas—. En movil ocupa el ancho completo con 10px de
+    margen, arrancando en top:372 (justo donde termina el tercio superior que
+    ocupa el globo) hasta bottom:12. En escritorio es la columna de 352px de
+    ancho en right:20, arrancando bajo la barra superior (top:72).
   -->
   <aside
-    class="flex min-h-0 w-full flex-1 flex-col gap-2 overflow-hidden p-2 wide:w-[clamp(300px,24vw,360px)] wide:flex-none wide:shrink-0 wide:gap-3 wide:p-3"
+    class="absolute inset-x-[10px] top-[372px] bottom-3 z-10 flex min-h-0 flex-col gap-2 overflow-hidden wide:inset-x-auto wide:right-5 wide:top-[72px] wide:bottom-4 wide:w-[352px] wide:gap-3"
   >
     <!--
       "Mas seguidos" desaparece en movil. Ahi el alto es el recurso escaso: con
@@ -71,21 +68,27 @@ const activeFilterCount = computed(
       horizontal) este panel se comprime, y sin recorte su contenido se salia y
       se pintaba por encima de la ficha del satelite.
     -->
-    <div class="panel flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div class="panel-header">
+    <div class="panel hud-panel flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div class="panel-header border-b-[rgba(127,181,242,.16)] wide:px-3.5 wide:py-3">
         <div class="min-w-0">
           <h2 class="panel-title">Seguimiento en vivo</h2>
           <!--
             En movil solo el recuento: la procedencia de los datos ya la dice el
             indicador de la cabecera, y aqui partia el rotulo en dos lineas.
           -->
-          <p class="mt-0.5 truncate text-[10px] text-ink-600">
+          <p class="mt-0.5 truncate text-t1 text-hud-ink-500">
             {{ store.filteredSatellites.length.toLocaleString('es-ES') }} de
             {{ store.totalCount.toLocaleString('es-ES') }} objetos<span class="stacked:hidden">
               · {{ store.isDemoMode ? 'datos sinteticos' : 'TLE Celestrak' }}</span
             >
           </p>
         </div>
+        <!-- Recuento compacto: solo escritorio, a la derecha de la cabecera -->
+        <span class="hidden shrink-0 font-mono text-t1 tabular-nums text-hud-ink-500 wide:inline">
+          {{ store.filteredSatellites.length.toLocaleString('es-ES') }}/{{
+            store.totalCount.toLocaleString('es-ES')
+          }}
+        </span>
       </div>
 
       <!-- Aviso de modo demo -->
@@ -101,7 +104,7 @@ const activeFilterCount = computed(
       </div>
 
       <!-- Buscador -->
-      <div class="flex items-center gap-2 px-3 py-3">
+      <div class="flex items-center gap-2 px-3 py-3 wide:px-3.5">
         <BaseInput
           v-model="store.searchQuery"
           placeholder="Buscar por nombre o NORAD ID"
@@ -110,19 +113,22 @@ const activeFilterCount = computed(
         </BaseInput>
         <button
           type="button"
-          class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md border transition-colors"
+          class="relative flex h-9 w-9 shrink-0 items-center justify-center gap-1.5 rounded-full border transition-colors wide:h-[34px] wide:w-auto wide:px-3"
           :class="
             showFilters || activeFilterCount > 0
               ? 'border-accent-500/60 bg-accent-500/10 text-accent-400'
-              : 'border-grid-700 bg-space-850 text-ink-500 hover:text-ink-300'
+              : 'border-accent-300/22 bg-[rgba(5,10,20,.5)] text-hud-ink-500 hover:text-hud-ink-300'
           "
           aria-label="Filtros"
           @click="showFilters = !showFilters"
         >
           <ListFilter :size="14" />
+          <span class="hidden text-t1 font-semibold tracking-[0.08em] uppercase wide:inline">
+            Filtros
+          </span>
           <span
             v-if="activeFilterCount > 0"
-            class="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-accent-500 px-1 text-[9px] font-semibold text-white"
+            class="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-accent-400 px-1 text-[9px] font-bold text-[#05080e] wide:static wide:ml-0.5 wide:h-4 wide:min-w-4 wide:px-1.5 wide:text-[10px]"
           >
             {{ activeFilterCount }}
           </span>
@@ -227,7 +233,7 @@ const activeFilterCount = computed(
 
       <!-- Lista: sin cabecera propia. El titulo del panel ya dice que es y
            cuantos objetos hay, y el orden se ajusta desde los filtros. -->
-      <div class="flex min-h-0 flex-1 flex-col border-t border-grid-800">
+      <div class="flex min-h-0 flex-1 flex-col border-t border-accent-300/10">
         <SatelliteList />
       </div>
     </div>

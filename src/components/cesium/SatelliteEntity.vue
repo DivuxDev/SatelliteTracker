@@ -72,10 +72,12 @@ const REGIME_COLORS = Object.fromEntries(
   ]),
 )
 const SELECTED_COLOR = Color.fromCssColorString('#ffffff')
-const HOVERED_COLOR = Color.fromCssColorString('#93c5fd')
+// Acento reconciliado con el logo (ver README de diseno, seccion «Marca»):
+// el azul generico #3b82f6/#93c5fd desaparece del proyecto.
+const HOVERED_COLOR = Color.fromCssColorString('#7fb5f2')
 const LABEL_COLOR = Color.fromCssColorString('#cbd5e1')
 const LABEL_COLOR_SELECTED = Color.fromCssColorString('#ffffff')
-const OUTLINE_HIGHLIGHT = Color.fromCssColorString('#3b82f6').withAlpha(0.85)
+const OUTLINE_HIGHLIGHT = Color.fromCssColorString('#7fb5f2').withAlpha(0.85)
 
 function sameSet(a, b) {
   if (a.size !== b.size) return false

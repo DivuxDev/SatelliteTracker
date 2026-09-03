@@ -1,9 +1,9 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Activity, Orbit, RefreshCw, Wifi, WifiOff } from '@lucide/vue'
+import { Activity, CircleQuestionMark, RefreshCw, Wifi, WifiOff } from '@lucide/vue'
 import { useSatelliteStore } from '@/stores/satelliteStore'
 
-const emit = defineEmits(['open-diagnostics'])
+const emit = defineEmits(['open-diagnostics', 'open-help'])
 
 const store = useSatelliteStore()
 
@@ -52,37 +52,53 @@ async function resync() {
 
 <template>
   <header
-    class="relative z-20 flex h-14 shrink-0 items-center gap-2 border-b border-grid-700 bg-space-850 px-2 sm:gap-4 sm:px-4 lg:gap-6"
+    class="absolute inset-x-0 top-0 z-30 flex h-14 shrink-0 items-center gap-2 hud-topbar px-3 sm:gap-4 sm:px-4 lg:gap-6 wide:px-5"
   >
     <!-- Identidad: en movil solo el distintivo, el titulo ocuparia toda la barra -->
     <div class="flex shrink-0 items-center gap-2.5">
-      <span
-        class="flex h-8 w-8 items-center justify-center rounded-md bg-accent-600/15 text-accent-400 ring-1 ring-accent-500/30"
-      >
-        <Orbit :size="18" :stroke-width="1.75" />
-      </span>
+      <!--
+        El mismo SVG que el favicon, servido desde public/: un solo fichero como
+        origen de la marca, en la pestana y en la barra. Trae su propio fondo
+        redondeado, asi que no lleva la caja con anillo de acento que llevaba el
+        icono generico anterior. En el HUD lleva ademas un anillo tenue para
+        separarse del globo que se ve tras la barra.
+      -->
+      <img
+        src="/favicon-32.svg"
+        alt="Satellite Orbit Tracker"
+        width="32"
+        height="32"
+        class="h-8 w-8 shrink-0 wide:h-7 wide:w-7 wide:rounded-lg wide:shadow-[0_0_0_1px_rgba(127,181,242,.35)]"
+      />
       <h1
-        class="hidden text-[13px] font-semibold tracking-[0.14em] text-ink-100 md:block xl:hidden"
+        class="hidden text-[13px] font-semibold tracking-[0.14em] text-ink-100 md:block xl:hidden wide:!hidden"
       >
         ORBIT TRACKER
       </h1>
-      <h1 class="hidden text-[13px] font-semibold tracking-[0.14em] text-ink-100 xl:block">
+      <h1 class="hidden text-[13px] font-semibold tracking-[0.14em] text-ink-100 xl:block wide:!hidden">
+        SATELLITE ORBIT TRACKER
+      </h1>
+      <!-- Version HUD del titulo: unica, siempre visible en escritorio -->
+      <h1 class="hidden text-t1 font-semibold text-hud-ink-accent hud-title wide:block">
         SATELLITE ORBIT TRACKER
       </h1>
     </div>
 
     <div class="min-w-0 flex-1" />
 
-    <!-- Reloj UTC -->
-    <div class="hidden items-baseline gap-2 lg:flex">
-      <span class="font-mono text-sm tabular-nums text-ink-100">{{ utcTime }}</span>
-      <span class="telemetry-label">UTC · {{ utcDate }}</span>
+    <!--
+      Reloj UTC. En movil, solo la hora (t3): no cabe la fecha junto al resto
+      de la barra. En escritorio se despliega en dos lineas con la fecha.
+    -->
+    <div class="flex items-baseline gap-2 wide:flex-col wide:items-end wide:gap-0">
+      <span class="font-mono text-t3 font-semibold tabular-nums text-hud-ink-100 wide:text-t4">{{ utcTime }}</span>
+      <span class="telemetry-label hidden text-hud-ink-500 wide:block">UTC · {{ utcDate }}</span>
     </div>
 
     <!-- Estado de sincronizacion -->
     <button
       type="button"
-      class="flex shrink-0 items-center gap-1.5 rounded-md border border-grid-700 bg-space-800 px-2 py-1.5 transition-colors hover:border-grid-600 sm:gap-2 sm:px-2.5"
+      class="flex h-[34px] shrink-0 items-center gap-1.5 rounded-full border border-[rgba(127,181,242,.28)] bg-[rgba(10,18,32,.55)] px-2.5 transition-colors hover:border-accent-300/50 sm:gap-2 sm:px-3"
       :title="
         store.isDemoMode
           ? 'Datos sinteticos locales. Pulsa para reintentar la conexion con Celestrak.'
@@ -90,23 +106,43 @@ async function resync() {
       "
       @click="resync"
     >
+      <span
+        v-if="!store.isDemoMode"
+        class="status-dot inline-block"
+        :style="{ backgroundColor: syncColor, color: syncColor }"
+      />
       <component
-        :is="store.isDemoMode ? WifiOff : Wifi"
+        v-else
+        :is="WifiOff"
         :size="13"
         :style="{ color: syncColor }"
       />
       <span
         v-if="syncLabel"
-        class="hidden text-[10px] font-semibold tracking-[0.1em] sm:inline"
+        class="hidden text-t1 font-semibold tracking-[0.1em] sm:inline"
         :style="{ color: syncColor }"
       >
         {{ syncLabel }}
       </span>
+      <span v-else class="hidden text-t1 font-semibold tracking-[0.1em] wide:inline" :style="{ color: syncColor }">
+        ENLACE
+      </span>
       <RefreshCw
         :size="11"
-        class="text-ink-500"
+        class="text-hud-ink-500"
         :class="(isSyncing || store.isInitializing) && 'animate-spin'"
       />
+    </button>
+
+    <!-- Manual: explica la app a quien la abre por primera vez. -->
+    <button
+      type="button"
+      class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border border-[rgba(127,181,242,.28)] bg-[rgba(10,18,32,.55)] text-hud-ink-300 transition-colors hover:text-accent-400"
+      aria-label="Manual de uso"
+      title="Manual de uso"
+      @click="emit('open-help')"
+    >
+      <CircleQuestionMark :size="17" :stroke-width="1.75" />
     </button>
 
     <!--
@@ -116,7 +152,7 @@ async function resync() {
     -->
     <button
       type="button"
-      class="relative shrink-0 text-ink-500 transition-colors hover:text-ink-100"
+      class="relative flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border border-[rgba(127,181,242,.28)] bg-[rgba(10,18,32,.55)] text-hud-ink-300 transition-colors hover:text-accent-400"
       aria-label="Diagnostico de datos"
       title="Diagnostico: fuentes de datos, motor de propagacion e incidencias"
       @click="emit('open-diagnostics')"

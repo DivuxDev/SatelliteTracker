@@ -24,7 +24,15 @@
  * Lo que no encaja en ninguno de los dos se declara "sin clasificar" en lugar de
  * asignarle un tipo plausible: un tipo inventado es peor que un hueco honesto,
  * porque el hueco se ve y la invencion no.
+ *
+ * Ademas de esos dos hay un tercer mecanismo, mas alla de este fichero: para
+ * lo que no esta curado y no es una constelacion en serie (ver
+ * `FAMILY_RULES`), `wikiLookupService.js` intenta una consulta en vivo a
+ * Wikidata/Wikipedia por ID NORAD exacto. Se activa solo desde el modal de
+ * telemetria (nunca aqui, esta funcion sigue siendo sincrona) y nunca
+ * sustituye al tipo de mision deducido, solo aporta una descripcion mas.
  */
+import { CURATED } from '@/data/curatedSatellites'
 
 /* -------------------------------------------------------------------------- */
 /* Tipos de mision                                                            */
@@ -172,75 +180,103 @@ export function classifyMission(name) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Fichas curadas                                                             */
+/* Familias de constelacion                                                   */
 /* -------------------------------------------------------------------------- */
 
 /**
- * Indexadas por ID NORAD, que no cambia nunca. Indexar por nombre seria fragil:
- * Celestrak escribe el Hubble como "HST", la ISS como "ISS (ZARYA)" y esos
- * rotulos han cambiado con los anos.
+ * Para constelaciones en serie (miles de unidades identicas e
+ * intercambiables) una ficha por satelite no tiene sentido, y buscarla en
+ * Wikipedia no vale mas que esto: nunca hay pagina propia para "STARLINK-30234",
+ * pero la EXPLICACION de la familia entera es la misma para todas sus
+ * unidades y es mas util que cualquier otra cosa que se pudiera mostrar.
  *
- * `alias` alimenta el buscador: son los nombres por los que la gente busca de
- * verdad, no como esten escritos en el TLE.
+ * Solo se consulta cuando no hay ficha curada (ver `getSatelliteProfile`).
+ * El orden importa igual que en `MISSION_RULES`: gana la primera que casa.
  */
-export const CURATED = {
-  25544: {
-    type: 'station',
-    alias: ['ISS', 'Estacion Espacial Internacional', 'International Space Station'],
-    summary:
-      'La Estacion Espacial Internacional: el mayor objeto construido por el ser humano en orbita, habitado de forma continua desde noviembre de 2000.',
-    facts: [
-      'Unos 109 m de envergadura y en torno a 420 t.',
-      'Da una vuelta a la Tierra cada 90 minutos: 16 amaneceres al dia.',
-      'Es el objeto artificial mas brillante del cielo nocturno; se ve a simple vista sin instrumentos.',
-    ],
+const FAMILY_RULES = [
+  {
+    re: /^STARLINK/i,
+    family: {
+      id: 'starlink',
+      label: 'Constelacion Starlink',
+      summary:
+        'Una de las mas de 7.000 unidades de Starlink, la red de internet de banda ancha de SpaceX. Los satelites de esta familia son de serie e intercambiables: no existe una ficha individual para cada uno.',
+    },
   },
-  20580: {
-    type: 'science',
-    alias: ['Hubble', 'HST', 'Telescopio Espacial Hubble'],
-    summary:
-      'El telescopio espacial Hubble. Observa en visible, ultravioleta e infrarrojo cercano desde 1990, por encima de la atmosfera que emborrona las imagenes desde tierra.',
-    facts: [
-      'Espejo primario de 2,4 m.',
-      'Fue reparado y mejorado en cinco misiones tripuladas del transbordador.',
-      'Su orbita baja decae poco a poco; sin reimpulso acabara reentrando.',
-    ],
+  {
+    re: /^ONEWEB/i,
+    family: {
+      id: 'oneweb',
+      label: 'Constelacion OneWeb',
+      summary:
+        'Uno de los mas de 600 satelites de OneWeb, una red de internet de banda ancha en orbita baja competidora de Starlink.',
+    },
   },
-  48274: {
-    type: 'station',
-    alias: ['Tiangong', 'CSS', 'Estacion espacial china'],
-    summary:
-      'Modulo Tianhe, nucleo de la estacion espacial china Tiangong, habitada de forma permanente desde 2021.',
-    facts: ['Tercera estacion habitada de forma continua de la historia, tras Mir y la ISS.'],
+  {
+    re: /^(QIANFAN|GUOWANG)/i,
+    family: {
+      id: 'china-megaconstellation',
+      label: 'Megaconstelacion china',
+      summary:
+        'Satelite de una de las megaconstelaciones chinas de internet en despliegue (Qianfan/G60 o Guowang), pensadas como respuesta a Starlink. Miles de unidades planificadas, de serie.',
+    },
   },
-  25994: {
-    type: 'earth',
-    alias: ['Terra', 'EOS AM-1'],
-    summary:
-      'Terra, buque insignia del programa de observacion terrestre de la NASA. Lleva el instrumento MODIS, que fotografia toda la superficie del planeta cada uno o dos dias.',
-    facts: ['En orbita heliosincrona: cruza el ecuador siempre a la misma hora solar local.'],
+  {
+    re: /^IRIDIUM/i,
+    family: {
+      id: 'iridium',
+      label: 'Constelacion Iridium NEXT',
+      summary:
+        'Uno de los 66 satelites operativos (mas repuestos en orbita) de Iridium NEXT, que da cobertura de telefonia y datos por satelite en cualquier punto del planeta, polos incluidos.',
+    },
   },
-  27424: {
-    type: 'earth',
-    alias: ['Aqua'],
-    summary:
-      'Aqua, gemelo de Terra centrado en el ciclo del agua: vapor, nubes, precipitacion, hielo y humedad del suelo.',
-    facts: [],
+  {
+    re: /^GLOBALSTAR/i,
+    family: {
+      id: 'globalstar',
+      label: 'Constelacion Globalstar',
+      summary: 'Uno de los satelites de Globalstar, red de telefonia y mensajeria por satelite en orbita baja.',
+    },
   },
-  43013: {
-    type: 'weather',
-    alias: ['NOAA-20', 'JPSS-1'],
-    summary:
-      'NOAA-20, satelite meteorologico polar. Alimenta los modelos de prediccion numerica con sondeos de temperatura y humedad de toda la columna atmosferica.',
-    facts: [],
+  {
+    re: /^ORBCOMM/i,
+    family: {
+      id: 'orbcomm',
+      label: 'Constelacion Orbcomm',
+      summary:
+        'Uno de los satelites de Orbcomm, especializada en mensajeria de maquina a maquina: seguimiento de flotas, contenedores y sensores remotos.',
+    },
   },
-  36411: {
-    type: 'weather',
-    alias: ['GOES-15'],
-    summary:
-      'Serie GOES: meteorologia desde orbita geoestacionaria. Al girar a la vez que la Tierra vigila siempre el mismo hemisferio, que es lo que permite ver moverse un huracan en bucle.',
-    facts: [],
+  {
+    re: /^(FLOCK|DOVE)/i,
+    family: {
+      id: 'planet-flock',
+      label: 'Enjambre Planet Flock/Dove',
+      summary:
+        'Uno de los cientos de cubesats "Dove" de Planet Labs, organizados en enjambres ("Flock"). Fotografian la superficie terrestre completa a diario en baja resolucion.',
+    },
   },
+  {
+    re: /^LEMUR/i,
+    family: {
+      id: 'spire-lemur',
+      label: 'Constelacion Spire Lemur',
+      summary:
+        'Uno de los cubesats Lemur de Spire Global: recogen datos meteorologicos, de trafico maritimo (AIS) y aereo (ADS-B) mediante radio-ocultacion y receptores embarcados.',
+    },
+  },
+]
+
+/**
+ * Copy generico para constelaciones en serie, o `null` si el nombre no
+ * pertenece a ninguna familia conocida.
+ */
+export function classifyFamily(name) {
+  const clean = (name ?? '').trim()
+  for (const rule of FAMILY_RULES) {
+    if (rule.re.test(clean)) return rule.family
+  }
+  return null
 }
 
 /* Indice inverso de alias, en minusculas, para el buscador. */
@@ -281,6 +317,9 @@ export function getSatelliteProfile(satellite) {
   const curated = CURATED[String(satellite.id)] ?? null
   const classified = classifyMission(satellite.name)
   const type = curated?.type ? MISSION_TYPES[curated.type] : classified.type
+  // Una constelacion en serie nunca tiene ficha propia (son miles de unidades
+  // identicas), asi que solo se busca cuando no hay curada.
+  const family = curated ? null : classifyFamily(satellite.name)
 
   return {
     type,
@@ -291,6 +330,8 @@ export function getSatelliteProfile(satellite) {
     facts: curated?.facts ?? [],
     /** Explicacion generica del tipo, util cuando no hay ficha propia. */
     blurb: type.blurb,
+    /** Copy de familia (p.ej. "Constelacion Starlink"), o null si no aplica. */
+    family,
     notes: buildNotes(satellite, type),
   }
 }

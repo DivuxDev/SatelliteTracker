@@ -32,6 +32,21 @@
   opacity: 1;
 }
 
+/*
+  En movil el globo solo es visualmente prominente en el tercio superior: el
+  panel de lista flotante cubre left:10-right:10 desde top:372px hacia abajo,
+  tapando la esquina inferior izquierda donde vive el credito por defecto. Por
+  licencia no puede quedar oculto en ningun estado ni breakpoint, asi que en
+  movil se ancla justo encima del panel de lista (top:342) en vez de abajo del
+  todo. Mismas dos condiciones que la variante `stacked` de Tailwind.
+*/
+@media (max-width: 639px), (max-width: 1023px) and (min-height: 521px) {
+  .cesium-viewer-bottom {
+    top: 342px;
+    bottom: auto;
+  }
+}
+
 .cesium-credit-logoContainer img {
   max-height: 22px;
 }

@@ -379,9 +379,12 @@ onBeforeUnmount(() => {
 })
 
 const CONTROLS = computed(() => [
-  { id: 'zoom-in', icon: Plus, label: 'Acercar', action: () => zoom(-0.35) },
-  { id: 'zoom-out', icon: Minus, label: 'Alejar', action: () => zoom(0.5) },
-  { id: 'reset', icon: RotateCcw, label: 'Restablecer vista', action: resetView },
+  // `compact`: se ven tambien en movil. El resto (modo 2D/3D, pantalla
+  // completa) solo caben en escritorio sin invadir el panel de lista, que en
+  // movil empieza en top:372.
+  { id: 'zoom-in', icon: Plus, label: 'Acercar', action: () => zoom(-0.35), compact: true },
+  { id: 'zoom-out', icon: Minus, label: 'Alejar', action: () => zoom(0.5), compact: true },
+  { id: 'reset', icon: RotateCcw, label: 'Restablecer vista', action: resetView, compact: true },
   {
     id: 'mode',
     icon: GlobeIcon,
@@ -390,8 +393,6 @@ const CONTROLS = computed(() => [
     active: is2D.value,
     text: is2D.value ? '2D' : '3D',
   },
-  // Agrupado con el resto de controles de vista: suelto en la esquina inferior
-  // derecha chocaba con el panel de capas en visores bajos.
   { id: 'fullscreen', icon: Maximize2, label: 'Pantalla completa', action: toggleFullscreen },
 ])
 
@@ -407,14 +408,25 @@ const CONTROLS = computed(() => [
       <OrbitPolyline :show-orbit="SHOW_ORBIT" :show-footprint="SHOW_FOOTPRINT" />
     </template>
 
-    <!-- Controles de camara (arriba izquierda). Objetivos tactiles de 36 px en movil. -->
-    <div class="pointer-events-none absolute left-3 top-3 flex flex-col gap-1.5">
+    <!--
+      Controles de camara. La especificacion no dice donde van (solo describe
+      la chapa "VISOR ORBITAL" y la columna derecha), asi que se ubican donde
+      quede sitio libre sin tapar nada obligatorio: derecha en movil (la chapa
+      del visor ocupa la izquierda y el panel de lista es a partir de top:372),
+      izquierda en escritorio, bajo la chapa (top:72). Objetivo tactil minimo
+      en movil: 44px — en movil se ocultan 2D/3D y pantalla completa para que
+      la columna quepa antes de los 372px donde empieza la lista.
+    -->
+    <div class="pointer-events-none absolute right-[10px] top-16 flex flex-col gap-1.5 wide:left-5 wide:right-auto wide:top-[128px]">
       <button
         v-for="control in CONTROLS"
         :key="control.id"
         type="button"
-        class="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border border-grid-700 bg-space-800/90 text-ink-300 backdrop-blur transition-colors hover:border-accent-500/60 hover:text-accent-400 sm:h-8 sm:w-8"
-        :class="control.active && 'border-accent-500/60 text-accent-400'"
+        class="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(127,181,242,.28)] bg-[rgba(10,18,32,.55)] text-hud-ink-300 backdrop-blur transition-colors hover:border-accent-500/60 hover:text-accent-400 wide:h-[34px] wide:w-[34px]"
+        :class="[
+          control.active && 'border-accent-500/60 text-accent-400',
+          control.compact ? '' : 'hidden wide:flex',
+        ]"
         :title="control.label"
         :aria-label="control.label"
         @click="control.action"
@@ -424,13 +436,17 @@ const CONTROLS = computed(() => [
       </button>
     </div>
 
-    <!-- Tema del globo (arriba derecha). El selector de capas se retiro: el
-         anillo y la huella van siempre puestos y no hay nada que conmutar. -->
-    <div class="absolute right-3 top-3 flex flex-col items-end gap-1">
+    <!--
+      Tema del globo. El selector de capas se retiro: el anillo y la huella van
+      siempre puestos y no hay nada que conmutar. Se agrupa con el resto de
+      controles de vista: debajo del zoom en movil (derecha) y en escritorio
+      (izquierda).
+    -->
+    <div class="absolute right-[10px] top-[220px] flex flex-col items-end gap-1 wide:left-5 wide:right-auto wide:top-[332px] wide:items-start">
       <div class="flex items-center gap-1">
         <button
           type="button"
-          class="flex h-9 w-9 items-center justify-center rounded-md border border-grid-700 bg-space-800/90 text-ink-300 backdrop-blur transition-colors hover:text-accent-400 sm:h-8 sm:w-8"
+          class="flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(127,181,242,.28)] bg-[rgba(10,18,32,.55)] text-hud-ink-300 backdrop-blur transition-colors hover:text-accent-400 wide:h-[34px] wide:w-[34px]"
           :class="themePickerOpen && 'border-accent-500/60 text-accent-400'"
           :aria-expanded="themePickerOpen"
           :title="`Tema del globo: ${activeTheme.label}`"
@@ -444,7 +460,7 @@ const CONTROLS = computed(() => [
       <!-- Lista de temas -->
       <div
         v-if="themePickerOpen"
-        class="max-h-[calc(100%-3rem)] w-60 overflow-y-auto rounded-md border border-grid-700 bg-space-800/95 p-1 backdrop-blur"
+        class="max-h-[calc(100vh-260px)] w-60 overflow-y-auto rounded-md border border-grid-700 bg-space-800/95 p-1 backdrop-blur"
       >
         <p class="px-1.5 pb-1 pt-0.5 text-[9px] font-semibold tracking-[0.12em] text-ink-600">
           TEMA DEL GLOBO
@@ -486,33 +502,36 @@ const CONTROLS = computed(() => [
 
     <!--
       Leyenda de regimenes + estado del motor.
-      Va centrada abajo a proposito: la esquina inferior izquierda la ocupan los
-      creditos de CesiumJS, que por licencia deben permanecer visibles.
+      Centrada horizontalmente siempre. En movil el globo solo ocupa el tercio
+      superior (el panel de lista empieza en top:372), asi que la leyenda va
+      anclada por arriba en top:300 en vez de por abajo: pegarla al fondo de
+      la ventana la dejaria bajo el panel de lista, tapada. En escritorio
+      sigue centrada abajo, que es donde queda libre.
     -->
     <div
-      class="pointer-events-none absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-md border border-grid-700 bg-space-800/85 px-3 py-1.5 backdrop-blur sm:bottom-4 sm:gap-4"
+      class="pointer-events-none absolute left-1/2 top-[300px] flex -translate-x-1/2 items-center gap-3 hud-chip px-3 py-1.5 sm:gap-4 wide:top-auto wide:bottom-4 wide:px-3.5 wide:py-2"
     >
       <span
         v-for="regime in REGIME_LEGEND"
         :key="regime.id"
-        class="flex items-center gap-1.5 text-[10px] text-ink-300"
+        class="flex items-center gap-1.5 text-t1 text-hud-ink-300"
         :title="regime.description"
       >
         <span class="status-dot" :style="{ backgroundColor: regime.color, color: regime.color }" />
         {{ regime.id }}
       </span>
 
-      <span class="hidden h-3 w-px bg-grid-700 sm:block" />
+      <span class="hidden h-3 w-px bg-accent-300/16 sm:block" />
 
       <!-- Los indicadores del motor son secundarios: en movil se ceden en favor
            de la leyenda, que es lo que hace falta para leer el globo. -->
-      <span class="hidden items-center gap-1.5 text-[10px] sm:flex">
+      <span class="hidden items-center gap-1.5 sm:flex">
         <span class="telemetry-label">SGP4</span>
-        <span class="font-mono tabular-nums text-signal-400">{{ store.propagationRate }} Hz</span>
+        <span class="font-mono text-t2 tabular-nums text-signal-500">{{ store.propagationRate }} Hz</span>
       </span>
-      <span class="hidden items-center gap-1.5 text-[10px] sm:flex">
+      <span class="hidden items-center gap-1.5 sm:flex">
         <span class="telemetry-label">OBJ</span>
-        <span class="font-mono tabular-nums text-ink-300">
+        <span class="font-mono text-t2 tabular-nums text-hud-ink-300">
           {{ store.filteredSatellites.length.toLocaleString('es-ES') }}
         </span>
       </span>

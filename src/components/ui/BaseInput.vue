@@ -17,9 +17,9 @@ const emit = defineEmits(['update:modelValue'])
 const id = useId()
 
 const inputClasses = computed(() => [
-  'w-full rounded-md border border-grid-700 bg-space-850 py-2 pl-3 text-xs text-ink-100',
-  'placeholder:text-ink-600 transition-colors',
-  'focus:border-accent-500 focus:outline-none focus:ring-1 focus:ring-accent-500/40',
+  'w-full h-9 rounded-full border border-accent-300/22 bg-[rgba(5,10,20,.5)] py-2 pl-3 text-t2 text-hud-ink-100',
+  'placeholder:text-hud-ink-600 transition-colors',
+  'focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/30',
   props.suffix ? 'pr-12' : 'pr-3',
   props.mono ? 'font-mono tabular-nums' : '',
 ])

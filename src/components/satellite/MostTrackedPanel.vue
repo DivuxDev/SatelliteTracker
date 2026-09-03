@@ -35,8 +35,8 @@ function regimeColor(regime) {
 </script>
 
 <template>
-  <section v-if="data.items.length > 0" class="panel shrink-0">
-    <div class="panel-header">
+  <section v-if="data.items.length > 0" class="panel shrink-0 wide:hud-panel">
+    <div class="panel-header wide:border-b-[rgba(127,181,242,.16)] wide:px-3.5 wide:py-3">
       <button
         type="button"
         class="flex min-w-0 flex-1 items-center gap-2 text-left"
@@ -46,7 +46,7 @@ function regimeColor(regime) {
         <TrendingUp :size="13" class="shrink-0 text-accent-400" />
         <span class="min-w-0">
           <span class="panel-title block">Mas seguidos</span>
-          <span class="mt-0.5 block text-[10px] leading-tight text-ink-600">
+          <span class="mt-0.5 block text-[10px] leading-tight text-ink-600 wide:text-t1 wide:text-hud-ink-500">
             {{
               data.basedOnUsage
                 ? 'Segun tu actividad en este navegador'
@@ -75,27 +75,30 @@ function regimeColor(regime) {
 
     <!-- Filas de una sola linea: este panel convive con la lista principal y la
          ficha de detalle, asi que no puede comerse el alto de la barra lateral. -->
-    <ol v-if="!collapsed" class="p-1">
+    <ol v-if="!collapsed" class="p-1 wide:p-1.5">
       <li v-for="(item, index) in data.items" :key="item.id">
         <button
           type="button"
-          class="flex h-7 w-full items-center gap-2 rounded px-2 text-left transition-colors"
-          :class="store.selectedId === item.id ? 'bg-accent-500/10' : 'hover:bg-space-750'"
+          class="flex h-7 w-full items-center gap-2 rounded px-2 text-left transition-colors wide:h-8 wide:rounded-md wide:px-2.5"
+          :class="store.selectedId === item.id ? 'bg-accent-500/10 wide:bg-[rgba(47,127,224,.16)]' : 'hover:bg-space-750 wide:hover:bg-[rgba(47,127,224,.08)]'"
           :title="`${item.satellite.name} · NORAD ${item.id} · ${item.satellite.countryLabel}`"
           @click="store.select(item.id)"
           @mouseenter="store.setHovered(item.id)"
           @mouseleave="store.setHovered(null)"
         >
           <span
-            class="w-3 shrink-0 text-center font-mono text-[11px]"
-            :class="index === 0 ? 'text-accent-400' : 'text-ink-600'"
+            class="w-3 shrink-0 text-center font-mono text-[11px] wide:text-t1"
+            :class="index === 0 ? 'text-accent-400' : 'text-ink-600 wide:text-hud-ink-600'"
           >
             {{ index + 1 }}
           </span>
 
           <span
-            class="h-2 w-2 shrink-0 rounded-sm"
-            :style="{ backgroundColor: regimeColor(item.satellite.regime) }"
+            class="h-2 w-2 shrink-0 rounded-sm wide:h-1.5 wide:w-1.5 wide:rounded-full"
+            :style="{
+              backgroundColor: regimeColor(item.satellite.regime),
+              boxShadow: `0 0 8px ${regimeColor(item.satellite.regime)}`,
+            }"
             :title="item.satellite.regime"
           />
 

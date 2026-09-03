@@ -17,20 +17,37 @@ import DashboardView from '@/views/DashboardView.vue'
 import TelemetryModal from '@/components/satellite/TelemetryModal.vue'
 import GroundPassSimulator from '@/components/satellite/GroundPassSimulator.vue'
 import DiagnosticsModal from '@/components/layout/DiagnosticsModal.vue'
+import HelpModal from '@/components/layout/HelpModal.vue'
 
 const store = useSatelliteStore()
 
-const detailsOpen = ref(false)
-const passesOpen = ref(false)
-const diagnosticsOpen = ref(false)
+/**
+ * Pila de modales abiertos, por nombre. Con 3 modales un if/else de booleans
+ * bastaba; con 5+ (Manual, y los que vengan despues) deja de escalar, asi
+ * que el estado es una lista y Escape siempre cierra el ultimo abierto.
+ * `openModal` mueve el nombre al final si ya estaba, para que reabrir algo
+ * que ya estaba abierto lo deje como "mas reciente" sin duplicarlo.
+ */
+const modalStack = ref([])
+
+function openModal(name) {
+  modalStack.value = [...modalStack.value.filter((m) => m !== name), name]
+}
+function closeModal(name) {
+  modalStack.value = modalStack.value.filter((m) => m !== name)
+}
+function isModalOpen(name) {
+  return modalStack.value.includes(name)
+}
 
 /* Escape cierra de dentro hacia fuera; sin nada abierto, deselecciona. */
 function onKeydown(event) {
   if (event.key !== 'Escape') return
-  if (passesOpen.value) passesOpen.value = false
-  else if (detailsOpen.value) detailsOpen.value = false
-  else if (diagnosticsOpen.value) diagnosticsOpen.value = false
-  else store.clearSelection()
+  if (modalStack.value.length > 0) {
+    closeModal(modalStack.value[modalStack.value.length - 1])
+  } else {
+    store.clearSelection()
+  }
 }
 
 onMounted(() => {
@@ -45,15 +62,22 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col bg-space-950">
-    <HeaderNav @open-diagnostics="diagnosticsOpen = true" />
+  <div class="relative flex h-full flex-col bg-space-950">
+    <HeaderNav
+      @open-diagnostics="openModal('diagnostics')"
+      @open-help="openModal('help')"
+    />
 
     <main class="relative flex min-h-0 flex-1 flex-col">
-      <DashboardView @open-details="detailsOpen = true" @open-passes="passesOpen = true" />
+      <DashboardView
+        @open-details="openModal('details')"
+        @open-passes="openModal('passes')"
+      />
     </main>
 
-    <TelemetryModal :open="detailsOpen" @close="detailsOpen = false" />
-    <GroundPassSimulator :open="passesOpen" @close="passesOpen = false" />
-    <DiagnosticsModal :open="diagnosticsOpen" @close="diagnosticsOpen = false" />
+    <TelemetryModal :open="isModalOpen('details')" @close="closeModal('details')" />
+    <GroundPassSimulator :open="isModalOpen('passes')" @close="closeModal('passes')" />
+    <DiagnosticsModal :open="isModalOpen('diagnostics')" @close="closeModal('diagnostics')" />
+    <HelpModal :open="isModalOpen('help')" @close="closeModal('help')" />
   </div>
 </template>

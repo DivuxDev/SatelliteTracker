@@ -9,6 +9,17 @@
       content="Rastreador 3D en tiempo real de satelites en orbita terrestre. Propagacion SGP4/SDP4 sobre CesiumJS."
     />
     <title>Satellite Orbit Tracker</title>
+
+    <!--
+      Iconos. El .ico va primero por los navegadores antiguos, que ignoran el
+      resto; los SVG son nitidos a cualquier tamano y el de 16 es una version
+      simplificada a proposito, porque el detalle del de 32 se empasta en la
+      pestana. El PNG de 192 lo usa Android al anclar la web al escritorio.
+    -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/svg+xml" href="/favicon-32.svg" />
+    <link rel="apple-touch-icon" href="/favicon-192.png" />
+    <meta name="theme-color" content="#0a2540" />
     <!--
       CesiumJS carga Workers, Assets y Widgets como ficheros estaticos en tiempo
       de ejecucion. Se declara aqui, y no en main.js, porque los imports ESM se

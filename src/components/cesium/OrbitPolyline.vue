@@ -50,7 +50,15 @@ const scratchMatrix3 = new Matrix3()
 const scratchMatrix4 = new Matrix4()
 const scratchPosition = new Cartesian3()
 
-const ORBIT_COLOR = Color.fromCssColorString('#3b82f6')
+/*
+ * Acento reconciliado con la rampa del logo (ver README de diseno, seccion
+ * «Marca»): el azul generico #3b82f6 desaparece del proyecto. El anillo usa
+ * el paso mas claro (accent-300) y la huella el par accent-400/accent-500,
+ * igual que en las superficies CSS.
+ */
+const ORBIT_RING_COLOR = Color.fromCssColorString('#7fb5f2')
+const FOOTPRINT_FILL_COLOR = Color.fromCssColorString('#2f7fe0')
+const FOOTPRINT_OUTLINE_COLOR = Color.fromCssColorString('#5fa8f0')
 
 /* -------------------------------------------------------------------------- */
 /* Ciclo de vida de las primitivas                                            */
@@ -109,7 +117,7 @@ function drawOrbit() {
     loop: true,
     width: 2,
     material: Material.fromType('PolylineGlow', {
-      color: ORBIT_COLOR.withAlpha(0.85),
+      color: ORBIT_RING_COLOR.withAlpha(0.85),
       glowPower: 0.2,
       taperPower: 1,
     }),
@@ -148,9 +156,9 @@ function ensureFootprint() {
     ellipse: {
       semiMajorAxis: new CallbackProperty(() => currentFootprintRadius(), false),
       semiMinorAxis: new CallbackProperty(() => currentFootprintRadius(), false),
-      material: ORBIT_COLOR.withAlpha(0.07),
+      material: FOOTPRINT_FILL_COLOR.withAlpha(0.1),
       outline: true,
-      outlineColor: ORBIT_COLOR.withAlpha(0.45),
+      outlineColor: FOOTPRINT_OUTLINE_COLOR.withAlpha(0.6),
       outlineWidth: 1,
       height: 0,
     },

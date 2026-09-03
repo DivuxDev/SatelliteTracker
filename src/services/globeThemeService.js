@@ -71,7 +71,7 @@ export const GLOBE_THEMES = [
     imagery: () =>
       new GridImageryProvider({
         cells: 4,
-        color: Color.fromCssColorString('#3b82f6').withAlpha(0.45),
+        color: Color.fromCssColorString('#7fb5f2').withAlpha(0.45),
         glowColor: Color.fromCssColorString('#38bdf8').withAlpha(0.12),
         glowWidth: 4,
         backgroundColor: Color.fromCssColorString('#0d1522'),

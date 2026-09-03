@@ -18,8 +18,8 @@ const props = defineProps({
 
 const VARIANTS = {
   primary:
-    'bg-accent-600 text-white border-accent-500 hover:bg-accent-500 shadow-[0_0_18px_-6px_var(--color-accent-500)]',
-  secondary: 'bg-space-750 text-ink-100 border-grid-700 hover:bg-space-700 hover:border-grid-600',
+    'bg-accent-500 text-hud-ink-100 border-accent-400 hover:bg-accent-400 shadow-[0_0_18px_-4px_var(--color-accent-500)]',
+  secondary: 'bg-space-750 text-ink-100 border-grid-700 hover:border-accent-300/50',
   ghost: 'bg-transparent text-ink-300 border-transparent hover:bg-space-750 hover:text-ink-100',
   danger: 'bg-transparent text-alert-500 border-alert-500/40 hover:bg-alert-500/10',
 }
